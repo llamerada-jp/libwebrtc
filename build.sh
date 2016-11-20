@@ -5,10 +5,12 @@ if [ "$(uname)" == 'Darwin' ]; then
     ID='macosx'
     VERSION_ID=`sw_vers -productVersion`
     ARCH='x86_64'
+    IS_LINUX='f'
 
 elif [ -e /etc/os-release ]; then
     . /etc/os-release
     ARCH=`uname -p`
+    IS_LINUX='t'
 
 else
     echo 'unsupported platform'
@@ -70,6 +72,8 @@ else
 fi
 
 cd ${DEST_PATH}/src
-./build/install-build-deps.sh --no-prompt
+if [ ${IS_LINUX} == 't' ]; then
+    ./build/install-build-deps.sh --no-prompt
+fi
 gn gen out/Default --args='is_debug=false'
 ninja -C out/Default
