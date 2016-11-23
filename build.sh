@@ -61,14 +61,14 @@ if [ ! -e ${DEST_PATH} ]; then
     fetch --nohooks webrtc
     gclient sync
     cd ${DEST_PATH}/src
-    git checkout branch-heads/54
-    git pull . branch-heads/54
+    git checkout refs/remotes/branch-heads/54
+    git pull . refs/remotes/branch-heads/54
     cd ${DEST_PATH}
     gclient sync
 else
     cd ${DEST_PATH}/src
-    git checkout branch-heads/54
-    git pull . branch-heads/54
+    git checkout refs/remotes/branch-heads/54
+    git pull . refs/remotes/branch-heads/54
     cd ${DEST_PATH}
     gclient sync
 fi
