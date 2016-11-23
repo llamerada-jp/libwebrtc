@@ -30,10 +30,12 @@ set -u
 set -x
 
 # Setup working directory.
-DEPOT_PATH=${PWD}/opt/depot_tools
-DEST_PATH=${PWD}/opt/${ID}-${VERSION_ID}-${ARCH}
-if [ ! -e ${PWD}/opt ]; then
-    mkdir -p ${PWD}/opt
+cd `dirname $0` || exit 1
+SCRIPT_PATH=${PWD}
+DEPOT_PATH=${SCRIPT_PATH}/opt/depot_tools
+DEST_PATH=${SCRIPT_PATH}/opt/${ID}-${VERSION_ID}-${ARCH}
+if [ ! -e ${SCRIPT_PATH}/opt ]; then
+    mkdir -p ${SCRIPT_PATH}/opt
 fi
 
 # Install required packages.
