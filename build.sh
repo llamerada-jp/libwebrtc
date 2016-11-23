@@ -99,8 +99,18 @@ case ${ID} in
 esac
 
 cd ${OUT_PATH}
-LF=$(printf '\\\012_')
-LF=${LF%_}
-cat ${NINJA_FILE} | grep ${TARGET} | sed -e 's/ /'"$LF"'/g' | grep '\.[ao]$' | grep -v 'obj/webrtc/examples' | xargs ar cr ${DEST_PATH}/lib/libprcesswarp_webrtc.a
+objs=''
+for obj in `cat ${NINJA_FILE} | grep ${TARGET}`
+do
+    if [[ ${obj} =~ 'obj/webrtc/examples' ]]; then
+        continue
+    elif [[ ${obj} =~ \.o$ ]]; then
+        objs="${objs} ${obj}"
+    elif [[ ${obj} =~ \.a$ ]]; then
+        cp ${obj} ${DEST_PATH}/lib/
+    fi
+done
+ar cr ${DEST_PATH}/lib/libprocesswarp_webrtc.a ${objs}
+
 cd ${DEST_PATH}/src
-find webrtc/{api,base} -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
+find webrtc -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
