@@ -79,3 +79,28 @@ if [ ${IS_LINUX} == 't' ]; then
 fi
 gn gen out/Default --args='is_debug=false'
 ninja -C out/Default
+
+# Make archive
+rm -rf ${DEST_PATH}/lib
+rm -rf ${DEST_PATH}/include
+mkdir -p ${DEST_PATH}/lib
+mkdir -p ${DEST_PATH}/include
+OUT_PATH=${DEST_PATH}/src/out/Default
+case ${ID} in
+    'macosx' )
+        NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCDemo_executable.ninja
+        TARGET='obj/webrtc/examples/AppRTCDemo_executable/AppRTCDemo:'
+        ;;
+    'ubuntu' )
+        NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+        TARGET='peerconnection_client:'
+        ;;
+    * ) echo 'unsupported platform'; exit 1 ;;
+esac
+
+cd ${OUT_PATH}
+LF=$(printf '\\\012_')
+LF=${LF%_}
+cat ${NINJA_FILE} | grep ${TARGET} | sed -e 's/ /'"$LF"'/g' | grep '\.[ao]$' | grep -v 'obj/webrtc/examples' | xargs ar cr ${DEST_PATH}/lib/libprcesswarp_webrtc.a
+cd ${DEST_PATH}/src
+find webrtc/{api,base} -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
