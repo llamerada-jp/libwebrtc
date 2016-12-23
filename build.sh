@@ -25,9 +25,7 @@ case ${ID} in
 esac
 
 # Set shell options.
-set -e
-set -u
-set -x
+set -eux
 
 # Setup working directory.
 cd `dirname $0` || exit 1
@@ -36,12 +34,6 @@ DEPOT_PATH=${SCRIPT_PATH}/opt/depot_tools
 DEST_PATH=${SCRIPT_PATH}/opt/${ID}-${VERSION_ID}-${ARCH}
 if [ ! -e ${SCRIPT_PATH}/opt ]; then
     mkdir -p ${SCRIPT_PATH}/opt
-fi
-
-# Install required packages.
-if [ ${ID} == 'ubuntu' ]; then
-    sudo -v
-    sudo apt-get -y install pkg-config libglib2.0-dev libgtk2.0-dev
 fi
 
 # Checkout depot_tools.
@@ -111,6 +103,9 @@ do
     fi
 done
 ar cr ${DEST_PATH}/lib/libprocesswarp_webrtc.a ${objs}
+
+# Rename libdl to libopenmax_dl, because libdl is used to library for Dynamic Link.
+mv ${DEST_PATH}/lib/libdl.a ${DEST_PATH}/lib/libopenmax_dl.a
 
 cd ${DEST_PATH}/src
 find webrtc -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
