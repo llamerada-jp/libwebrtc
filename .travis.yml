@@ -1,0 +1,6 @@
+language: C++
+
+before_install:
+  - uname -a
+  - df -h
+  - free -h
