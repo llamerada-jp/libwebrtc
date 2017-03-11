@@ -1,31 +1,17 @@
 #!/usr/bin/env bash
 
-# Get platform definition.
-if [ "$(uname)" == 'Darwin' ]; then
-    ID='macosx'
-    VERSION_ID=`sw_vers -productVersion`
-    ARCH='x86_64'
-    IS_LINUX='f'
-
-elif [ -e /etc/os-release ]; then
-    . /etc/os-release
-    ARCH=`uname -p`
-    IS_LINUX='t'
-
-else
-    echo 'unsupported platform'
-    exit 1
-fi
-
-# Check platform.
-case ${ID} in
-    'macosx' ) ;;
-    'ubuntu' ) ;;
-    * ) echo 'unsupported platform'; exit 1 ;;
-esac
-
 # Set shell options.
 set -eux
+
+. common.sh
+
+get_platform_info
+check_platform
+
+case ${ID} in
+    'macosx' ) readonly CHROME_OS='mac' ;;
+    'ubuntu' ) readonly CHROME_OS='linux' ;;
+esac
 
 # Setup working directory.
 cd `dirname $0` || exit 1
@@ -44,6 +30,7 @@ else
     git pull
 fi
 
+
 # Set PATH.
 export PATH=${DEPOT_PATH}:${PATH}
 
@@ -51,19 +38,16 @@ if [ ! -e ${DEST_PATH} ]; then
     mkdir -p ${DEST_PATH}
     cd ${DEST_PATH}
     fetch --nohooks webrtc
-    gclient sync
+    gclient sync --with_branch_heads
     cd ${DEST_PATH}/src
-    git checkout refs/remotes/branch-heads/54
-    git pull . refs/remotes/branch-heads/54
-    cd ${DEST_PATH}
-    gclient sync
-else
-    cd ${DEST_PATH}/src
-    git checkout refs/remotes/branch-heads/54
-    git pull . refs/remotes/branch-heads/54
-    cd ${DEST_PATH}
-    gclient sync
+    git fetch
 fi
+
+get_chrome_version
+
+cd ${DEST_PATH}/src
+git checkout -B local_work "branch-heads/${CHROME_VERSION}"
+gclient sync --jobs 16
 
 cd ${DEST_PATH}/src
 if [ ${IS_LINUX} == 't' ]; then
