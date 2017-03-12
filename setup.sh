@@ -12,5 +12,5 @@ check_platform
 # Install required packages.
 if [ ${ID} == 'ubuntu' ]; then
     sudo -v
-    sudo apt-get -y install pkg-config libglib2.0-dev libgtk2.0-dev
+    sudo apt-get -y install pkg-config libglib2.0-dev libgtk2.0-dev jq
 fi

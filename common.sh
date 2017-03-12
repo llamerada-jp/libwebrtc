@@ -30,7 +30,12 @@ check_platform() {
 
 # Get version of release
 get_chrome_version() {
-    local line=`curl https://omahaproxy.appspot.com/all | grep ${CHROME_OS},stable`
+    case ${ID} in
+	'macosx' ) local os='mac' ;;
+	'ubuntu' ) local os='linux' ;;
+    esac
+
+    local line=`curl https://omahaproxy.appspot.com/all | grep ${os},stable`
     local v=`echo ${line} | cut -d ',' -f 3`
     readonly CHROME_VERSION=`echo ${v} | cut -d '.' -f 1`
 }

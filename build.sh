@@ -8,11 +8,6 @@ set -eux
 get_platform_info
 check_platform
 
-case ${ID} in
-    'macosx' ) readonly CHROME_OS='mac' ;;
-    'ubuntu' ) readonly CHROME_OS='linux' ;;
-esac
-
 # Setup working directory.
 cd `dirname $0` || exit 1
 SCRIPT_PATH=${PWD}
@@ -86,7 +81,7 @@ do
         cp ${obj} ${DEST_PATH}/lib/
     fi
 done
-ar cr ${DEST_PATH}/lib/libprocesswarp_webrtc.a ${objs}
+ar cr ${DEST_PATH}/lib/libwebrtc.a ${objs}
 
 # Rename libdl to libopenmax_dl, because libdl is used to library for Dynamic Link.
 mv ${DEST_PATH}/lib/libdl.a ${DEST_PATH}/lib/libopenmax_dl.a
