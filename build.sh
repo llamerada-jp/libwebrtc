@@ -35,7 +35,7 @@ get_rpi_tools() {
 # Get stable version number of chrome.
 set_chrome_version() {
     case ${ID} in
-	'macosx' ) local os='mac' ;;
+	'macos' ) local os='mac' ;;
 	'raspbian' ) local os='linux' ;;
 	'ubuntu' ) local os='linux' ;;
     esac
@@ -48,7 +48,7 @@ set_chrome_version() {
 # Get platform definition.
 set_platform_info() {
     if [ "$(uname)" == 'Darwin' ]; then
-        readonly ID='macosx'
+        readonly ID='macos'
         readonly VERSION_ID=`sw_vers -productVersion`
         readonly ARCH='x86_64'
         readonly IS_LINUX='f'
@@ -101,15 +101,14 @@ setup() {
     get_depot_tools
 
     case "${ID}" in
-	'macosx'   ) setup_macosx ;;
+	'macos'   ) setup_macos ;;
 	'raspbian' ) setup_raspbian ;;
 	'ubuntu'   ) setup_ubuntu ;;
     esac
 }
 
-setup_mac() {
-    # Do nothing.
-    echo ""
+setup_macos() {
+    brew install jq
 }
 
 setup_raspbian() {
@@ -179,9 +178,14 @@ build_archive() {
     OUT_PATH=${DEST_PATH}/src/out/Default
 
     case ${ID} in
-	'macosx' )
-            NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCDemo_executable.ninja
-            TARGET='obj/webrtc/examples/AppRTCDemo_executable/AppRTCDemo:'
+	'macos' )
+	    if [ `expr ${CHROME_VERSION}` -ge 57 ]; then
+		NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCMobile_executable.ninja
+		TARGET='obj/webrtc/examples/AppRTCMobile_executable/AppRTCMobile'
+	    else
+		NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCDemo_executable.ninja
+		TARGET='obj/webrtc/examples/AppRTCDemo_executable/AppRTCDemo:'
+	    fi
             ;;
 	'raspbian' )
 	    NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
@@ -215,7 +219,10 @@ build_archive() {
     find webrtc -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
 
     case "${ARCHIVE_TYPE}" in
-	'zip'  ) ;;
+	'zip'  )
+	    cd ${DEST_PATH}
+	    zip -r ${ARCHIVE_FILE} lib include
+	    ;;
 	'gzip' )
 	    cd ${DEST_PATH}
 	    tar -czf ${ARCHIVE_FILE} lib include
@@ -239,7 +246,7 @@ upload() {
 }
 EOS
 `
-	upload_url = `curl -v -u "${GITHUB_OWNER}:${GITHUB_PASSWORD}" -H 'Content-type: application/json' -d "${release_json}" "${GITHUB_PATH}/releases" | jq -r ".upload_url"`
+	upload_url=`curl -v -u "${GITHUB_OWNER}:${GITHUB_PASSWORD}" -H 'Content-type: application/json' -d "${release_json}" "${GITHUB_PATH}/releases" | jq -r ".upload_url"`
     fi
 
     cd ${DEST_PATH}
