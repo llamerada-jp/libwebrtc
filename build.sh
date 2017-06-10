@@ -61,7 +61,11 @@ set_platform_info() {
 
     elif [ -e /etc/os-release ]; then
         . /etc/os-release
-        readonly ARCH=`uname -p`
+	if [ "${TARGET}" == 'x86' ]; then
+	    readonly ARCH='x86'
+	else
+            readonly ARCH=`uname -p`
+	fi
         readonly IS_LINUX='true'
 
     else
@@ -141,6 +145,9 @@ build() {
 	export GYP_CROSSCOMPILE=1
 	export GYP_DEFINES="OS=linux target_arch=arm arm_version=7 arm_use_neon=1 arm_float_abi=hard clang=0 include_tests=0 sysroot=${RPI_ROOT}"
 	export GYP_GENERATOR_OUTPUT='arm'
+
+    elif [ "${IS_LINUX}" == 'true' -a "${ARCH}" == 'x86' ]; then
+	export GYP_DEFINES='target_arch=ia32'
     fi
 
     # First time build.
@@ -259,8 +266,10 @@ show_usage() {
     echo "Usage: $1 [-Bhrsu]" 1>&2
     echo "  -B : Disable build sequence." 1>&2
     echo "  -h : Show help." 1>&2
-    echo "  -r : Cross compile for Raspberry Pi." 1>&2
     echo "  -s : Setup build environment." 1>&2
+    echo "  -t : Set target." 1>&2
+    echo "    rpi : Raspbian." 1>&2
+    echo "    x86 : Linux with x86 architecture." 1>&2
     echo "  -u : Upload archive to github release." 1>&2
 }
 
@@ -271,7 +280,7 @@ ENABLE_BUILD='true'
 ENABLE_UPLOAD='false'
 
 # Decode options.
-while getopts Bhrsu OPT
+while getopts Bhst:u OPT
 do
     case $OPT in
 	B)  ENABLE_BUILD='false'
@@ -279,10 +288,10 @@ do
 	h)  show_usage $0
 	    exit 0
 	    ;;
-        r)  TARGET='rpi'
-            ;;
         s)  ENABLE_SETUP='true'
             ;;
+	t)  TARGET=$OPTARG
+	    ;;
         u)  ENABLE_UPLOAD='true'
             ;;
         \?) show_usage $0
