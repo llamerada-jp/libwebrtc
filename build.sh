@@ -197,7 +197,9 @@ build() {
 
     # Change branch for stable chrome version.
     cd ${DEST_PATH}/src
-    git checkout -B local_work "branch-heads/${CHROME_VERSION}"
+    git checkout master
+    git pull
+    git checkout -B "local_work_${CHROME_VERSION}" "branch-heads/${CHROME_VERSION}"
 
     # Build main.
     gclient sync --jobs 16
