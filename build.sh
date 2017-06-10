@@ -97,6 +97,35 @@ set_archive_info() {
     fi
 }
 
+set_build_info() {
+    OUT_PATH=${DEST_PATH}/src/out/Default
+
+    case ${ID} in
+	'macos' )
+	    if [ `expr ${CHROME_VERSION}` -ge 57 ]; then
+		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCMobile_executable.ninja
+		readonly NINJA_TARGET='obj/webrtc/examples/AppRTCMobile_executable/AppRTCMobile'
+		readonly BUILD_TARGET='AppRTCMobile'
+	    else
+		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCDemo_executable.ninja
+		readonly NINJA_TARGET='obj/webrtc/examples/AppRTCDemo_executable/AppRTCDemo:'
+		readonly BUILD_TARGET='AppRTCDemo'
+	    fi
+            ;;
+	'raspbian' )
+	    readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+	    readonly NINJA_TARGET='peerconnection_client:'
+	    readonly BUILD_TARGET='peerconnection_client'
+	    ;;
+	'ubuntu' )
+            readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+            readonly NINJA_TARGET='peerconnection_client:'
+	    readonly BUILD_TARGET='peerconnection_client'
+            ;;
+	* ) echo 'unsupported platform'; exit 1 ;;
+    esac
+}
+
 setup() {
     if [ ! -e ${SCRIPT_PATH}/opt ]; then
 	mkdir -p ${SCRIPT_PATH}/opt
@@ -173,7 +202,7 @@ build() {
     # Build main.
     gclient sync --jobs 16
     gn gen out/Default --args='is_debug=false'
-    ninja -C out/Default
+    ninja -C out/Default ${BUILD_TARGET}
 }
 
 # Make archive
@@ -184,30 +213,9 @@ build_archive() {
     mkdir -p ${DEST_PATH}/include
     OUT_PATH=${DEST_PATH}/src/out/Default
 
-    case ${ID} in
-	'macos' )
-	    if [ `expr ${CHROME_VERSION}` -ge 57 ]; then
-		NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCMobile_executable.ninja
-		TARGET='obj/webrtc/examples/AppRTCMobile_executable/AppRTCMobile'
-	    else
-		NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCDemo_executable.ninja
-		TARGET='obj/webrtc/examples/AppRTCDemo_executable/AppRTCDemo:'
-	    fi
-            ;;
-	'raspbian' )
-	    NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
-	    TARGET='peerconnection_client:'
-	    ;;
-	'ubuntu' )
-            NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
-            TARGET='peerconnection_client:'
-            ;;
-	* ) echo 'unsupported platform'; exit 1 ;;
-    esac
-
     cd ${OUT_PATH}
     objs=''
-    for obj in `cat ${NINJA_FILE} | grep ${TARGET}`
+    for obj in `cat ${NINJA_FILE} | grep ${NINJA_TARGET}`
     do
 	if [[ ${obj} =~ 'obj/webrtc/examples' ]]; then
             continue
@@ -239,7 +247,9 @@ build_archive() {
 
 upload() {
     local upload_url=`curl ${GITHUB_PATH}/releases | jq -r "map(select(.body == \"${CHROME_VERSION}\")) | .[].upload_url"`
-
+    if [ ${GITHUB_PASSWORD:-''} == '' ]; then
+	read -sp "Password for github: " GITHUB_PASSWORD
+    fi
 
     if [ "${upload_url}" = '' ]; then
 	local release_json=`cat << EOS
@@ -305,6 +315,7 @@ shift $((OPTIND - 1))
 set_platform_info `dirname $0`
 set_chrome_version
 set_archive_info
+set_build_info
 
 # Setup.
 if [ "${ENABLE_SETUP}" == 'true' ]; then
