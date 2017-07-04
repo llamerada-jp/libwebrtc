@@ -203,7 +203,7 @@ build() {
 
     # Build main.
     gclient sync --jobs 16
-    gn gen out/Default --args='is_debug=false'
+    gn gen out/Default --args="is_debug=${ENABLE_DEBUG}"
     ninja -C out/Default ${BUILD_TARGET}
 }
 
@@ -290,12 +290,15 @@ TARGET=''
 ENABLE_SETUP='false'
 ENABLE_BUILD='true'
 ENABLE_UPLOAD='false'
+ENABLE_DEBUG='false'
 
 # Decode options.
-while getopts Bhst:u OPT
+while getopts Bdhst:u OPT
 do
     case $OPT in
 	B)  ENABLE_BUILD='false'
+	    ;;
+	d)  ENABLE_DEBUG='true'
 	    ;;
 	h)  show_usage $0
 	    exit 0
