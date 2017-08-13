@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Set shell options.
-set -eux
+set -eu
 
 readonly GITHUB_URL='https://api.github.com'
 readonly GITHUB_OWNER='llamerada-jp'
@@ -315,6 +315,8 @@ do
     esac
 done
 shift $((OPTIND - 1))
+
+set -x
 
 # Set environment values.
 set_platform_info `dirname $0`
