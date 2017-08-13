@@ -277,6 +277,7 @@ EOS
 show_usage() {
     echo "Usage: $1 [-Bhrsu]" 1>&2
     echo "  -B : Disable build sequence." 1>&2
+    echo "  -d : Set build type to debug mode." 1>&2
     echo "  -h : Show help." 1>&2
     echo "  -s : Setup build environment." 1>&2
     echo "  -t : Set target." 1>&2
