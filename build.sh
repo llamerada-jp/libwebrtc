@@ -232,17 +232,20 @@ build_archive() {
     # Rename libdl to libopenmax_dl, because libdl is used to library for Dynamic Link.
     mv ${DEST_PATH}/lib/libdl.a ${DEST_PATH}/lib/libopenmax_dl.a
 
+    # List-up lib filenames.
+    ls ${DEST_PATH}/lib/lib* | sed -e 's/.*\///g' > ${DEST_PATH}/exports_libwebrtc.txt
+
     cd ${DEST_PATH}/src
     find webrtc -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
 
     case "${ARCHIVE_TYPE}" in
 	'zip'  )
 	    cd ${DEST_PATH}
-	    zip -r ${ARCHIVE_FILE} lib include
+	    zip -r ${ARCHIVE_FILE} lib include exports_libwebrtc.txt
 	    ;;
 	'gzip' )
 	    cd ${DEST_PATH}
-	    tar -czf ${ARCHIVE_FILE} lib include
+	    tar -czf ${ARCHIVE_FILE} lib include exports_libwebrtc.txt
 	    ;;
     esac
 }
