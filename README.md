@@ -8,10 +8,10 @@ Build sequence of script is based on below documents.
 https://webrtc.org/native-code/development/
 
 ## How to use
-Archive file contains compiled libraries and include files for C++.
-You can use these files by unarchive it and link it to your compiler.
+Released archive files contains compiled libraries and include files for C++.
+You can use these files by unarchive it and link it to your programs.
 
 ## License
-License follows original sources it. See below documents.
+License follows original sources of it. See below documents.
 
 https://webrtc.org/license/
