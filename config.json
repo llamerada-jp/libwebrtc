@@ -1,0 +1,34 @@
+{
+    "chrome_os_map" : {
+	"osx" : "mac"
+    },
+    "osx" : [
+	{
+	    "chrome_version" : 0,
+	    "build_target" : "AppRTCDemo",
+	    "ninja_file" : "obj/webrtc/examples/AppRTCDemo_executable.ninja",
+	    "ninja_target" : "obj/webrtc/examples/AppRTCDemo_executable/AppRTCDemo:",
+	    "exclude_objs" : [
+		"obj/webrtc/examples"
+	    ],
+	    "rename_objs" : {
+		"libdl.a" : "libopenmax_dl.a"
+	    },
+	    "header_root_path" : "src/webrtc",
+	    "archive_name" : "libwebrtc-osx-{chrome_version}.zip"
+	},
+	{
+	    "chrome_version" : 57,
+	    "build_target" : "AppRTCMobile",
+	    "ninja_file" : "obj/webrtc/examples/AppRTCMobile_executable.ninja",
+	    "ninja_target" : "obj/webrtc/examples/AppRTCMobile_executable/AppRTCMobile"
+	},
+	{
+	    "chrome_version" : 63,
+	    "build_target" : "AppRTCMobile",
+	    "ninja_file" : "obj/examples/AppRTCMobile_executable.ninja",
+	    "ninja_target" : "obj/examples/AppRTCMobile_executable/AppRTCMobile",
+	    "header_root_path" : "src"
+	}
+    ]
+}
