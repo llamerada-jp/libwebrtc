@@ -8,6 +8,7 @@ import re
 import urllib.request
 import shutil
 import subprocess
+import sys
 
 PATH_WORK = 'opt'
 PATH_DEPOT_TOOLS = 'opt/depot_tools'
@@ -33,7 +34,11 @@ def util_emptydir(*path):
 
 def util_exec(*cmds):
     print('exec : ' + ' '.join(cmds))
-    ret = subprocess.call(cmds)
+    subprocess.check_call(cmds)
+
+def util_exists(*path):
+    abs_path = util_getpath(*path)
+    return os.path.exists(abs_path)
 
 def util_getpath(*path):
     global PATH_ROOT
@@ -43,6 +48,11 @@ def util_mv(src, dst):
     shutil.move(src, dst)
     print('mv : ' + src + ' ' + dst)
 
+def util_rm(*path):
+    abs_path = util_getpath(*path)
+    if os.path.exists(abs_path):
+        shutil.rmtree(abs_path)
+
 # Parser for arguments.
 def parse_args():
     parser = argparse.ArgumentParser(description='This script is ...')
@@ -51,8 +61,11 @@ def parse_args():
                         help="Set configuration json file name. 'default: config.json'")
     parser.add_argument('-t', '--target_env', action='store',
                         type=str, required=True,
-                        choices=['osx'],
+                        choices=['osx', 'ubuntu'],
                         help="Set target envrionment.")
+    parser.add_argument('-a', '--arch', action='store', type=str,
+                        choices=['x86', 'x64'],
+                        help="Set arget archtecture")
     parser.add_argument('--chrome_ver', action='store',
                         type=int, help="Set build target Chrome version.")
     parser.add_argument('-d', '--debug', action='store_true')
@@ -70,6 +83,8 @@ def get_last_chrome_ver(os):
 #
 def get_work_path(conf, *path):
     path = conf['target_env']
+    if 'arch' in conf:
+        path = path + '_' + conf['arch']
     return util_getpath(PATH_WORK, path)
 
 #
@@ -105,6 +120,16 @@ def parse_conf(args):
         # Mearge
         conf.update(it_env)
 
+    # Check architecture
+    if 'arch' in conf and isinstance(conf['arch'], list):
+        if args.arch is None:
+            conf['arch'] = conf['arch'][0]
+        elif args.arch in conf['arch']:
+            conf['arch'] = args.arch
+        else:
+            print('invalid arch : ' + args.arch)
+            sys.exit()
+
     conf['target_env'] = target_env
     conf['chrome_version'] = chrome_ver
     conf['debug'] = args.debug
@@ -128,7 +153,8 @@ def setup(conf):
 def build(conf):
     work_path = get_work_path(conf)
     util_cd(work_path)
-    util_exec('fetch', '--nohooks', 'webrtc')
+    if not util_exists(work_path, '.gclient'):
+        util_exec('fetch', '--nohooks', 'webrtc')
     util_exec('gclient', 'sync', '--nohooks', '--with_branch_heads', '-v', '-R')
     # TODO install-build-deps.sh
     util_exec('git', 'submodule', 'foreach',
@@ -142,10 +168,14 @@ def build(conf):
               'refs/remotes/branch-heads/' + str(conf['chrome_version']))
     util_exec('gclient', 'sync', '--with_branch_heads', '-v', '-R')
     util_exec('gclient', 'runhooks', '-v')
+
+    args = []
     if conf['debug']:
-        util_exec('gn', 'gen', 'out/Default', '--args="is_debug=true"')
-    else:
-        util_exec('gn', 'gen', 'out/Default')
+        args.append('is_debug=true')
+    if conf['arch']:
+        args.append("target_cpu=\"" + conf['arch'] + "\"")
+
+    util_exec('gn', 'gen', 'out/Default', '--args=' + ' '.join(args))
     util_exec('ninja', '-C', 'out/Default', conf['build_target'])
 
 def archive(conf):
@@ -190,10 +220,16 @@ def archive(conf):
     # Copy header files.
     util_cd(work_path, conf['header_root_path'])
     util_exec('find', '.', '-name', '*.h', '-exec', 'rsync', '-R', '{}', util_getpath(work_path, 'include/webrtc'), ';')
+    for ex in conf['exclude_headers']:
+        util_rm(work_path, 'include/webrtc', ex)
 
     # Archive
     util_cd(work_path)
-    util_exec('zip', '-r', get_archive_name(conf), 'lib', 'include', 'exports_libwebrtc.txt')
+    archive_name = get_archive_name(conf)
+    if re.search(r'\.zip$', archive_name):
+        util_exec('zip', '-r', archive_name, 'lib', 'include', 'exports_libwebrtc.txt')
+    elif re.search(r'\.tar\.gz$', archive_name):
+        util_exec('tar', 'czvf', archive_name, 'lib', 'include', 'exports_libwebrtc.txt')
 
 if __name__ == '__main__':
     global PATH_ROOT

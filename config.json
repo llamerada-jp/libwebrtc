@@ -1,6 +1,7 @@
 {
     "chrome_os_map" : {
-	"osx" : "mac"
+	"osx" : "mac",
+	"ubuntu" : "linux"
     },
     "osx" : [
 	{
@@ -15,6 +16,12 @@
 		"libdl.a" : "libopenmax_dl.a"
 	    },
 	    "header_root_path" : "src/webrtc",
+	    "exclude_headers" : [
+		"build",
+		"buildtools",
+		"tools_webrtc",
+		"examples"
+	    ],
 	    "archive_name" : "libwebrtc-osx-{chrome_version}.zip"
 	},
 	{
@@ -28,6 +35,43 @@
 	    "build_target" : "AppRTCMobile",
 	    "ninja_file" : "obj/examples/AppRTCMobile_executable.ninja",
 	    "ninja_target" : "obj/examples/AppRTCMobile_executable/AppRTCMobile",
+	    "exclude_objs" : [
+		"obj/examples"
+	    ],
+	    "header_root_path" : "src"
+	}
+    ],
+    "ubuntu" : [
+	{
+	    "chrome_version" : 0,
+	    "build_target" : "peerconnection_client",
+	    "ninja_file" : "obj/webrtc/examples/peerconnection_client.ninja",
+	    "ninja_target" : "peerconnection_client:",
+	    "exclude_objs" : [
+		"obj/webrtc/examples"
+	    ],
+	    "rename_objs" : {
+		"libdl.a" : "libopenmax_dl.a"
+	    },
+	    "header_root_path" : "src/webrtc",
+	    "exclude_headers" : [
+		"build",
+		"buildtools",
+		"out",
+		"test",
+		"testing",
+		"tools_webrtc",
+		"examples"
+	    ],
+	    "archive_name" : "libwebrtc-ubuntu-{arch}-{chrome_version}.tar.gz",
+	    "arch" : ["x64", "x86"]
+	},
+	{
+	    "chrome_version" : 63,
+	    "ninja_file" : "obj/examples/peerconnection_client.ninja",
+	    "exclude_objs" : [
+		"obj/examples"
+	    ],
 	    "header_root_path" : "src"
 	}
     ]
