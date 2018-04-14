@@ -170,9 +170,9 @@ def build(conf):
     util_exec('gclient', 'runhooks', '-v')
 
     args = []
-    if conf['debug']:
+    if 'debug' in conf and conf['debug']:
         args.append('is_debug=true')
-    if conf['arch']:
+    if 'arch' in conf:
         args.append("target_cpu=\"" + conf['arch'] + "\"")
 
     util_exec('gn', 'gen', 'out/Default', '--args=' + ' '.join(args))
