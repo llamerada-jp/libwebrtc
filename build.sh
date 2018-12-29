@@ -102,25 +102,59 @@ set_build_info() {
 
     case ${ID} in
 	'macos' )
-	    if [ `expr ${CHROME_VERSION}` -ge 57 ]; then
+	    if [ `expr ${CHROME_VERSION}` -ge 69 ]; then
+		readonly NINJA_FILE=${OUT_PATH}/obj/examples/AppRTCMobile_executable.ninja
+		readonly NINJA_TARGET='obj/examples/AppRTCMobile_executable/AppRTCMobile'
+		readonly BUILD_TARGET='AppRTCMobile'
+		readonly INCLUDE_SRC_DIR='.'
+
+	    elif [ `expr ${CHROME_VERSION}` -ge 64 ]; then
+		readonly NINJA_FILE=${OUT_PATH}/obj/examples/AppRTCMobile_executable.ninja
+		readonly NINJA_TARGET='obj/examples/AppRTCMobile_executable/AppRTCMobile'
+		readonly BUILD_TARGET='AppRTCMobile'
+		readonly INCLUDE_SRC_DIR='webrtc'
+
+	    elif [ `expr ${CHROME_VERSION}` -ge 57 ]; then
 		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCMobile_executable.ninja
 		readonly NINJA_TARGET='obj/webrtc/examples/AppRTCMobile_executable/AppRTCMobile'
 		readonly BUILD_TARGET='AppRTCMobile'
+		readonly INCLUDE_SRC_DIR='webrtc'
+
 	    else
 		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/AppRTCDemo_executable.ninja
 		readonly NINJA_TARGET='obj/webrtc/examples/AppRTCDemo_executable/AppRTCDemo:'
 		readonly BUILD_TARGET='AppRTCDemo'
+		readonly INCLUDE_SRC_DIR='webrtc'
 	    fi
             ;;
 	'raspbian' )
-	    readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
-	    readonly NINJA_TARGET='peerconnection_client:'
-	    readonly BUILD_TARGET='peerconnection_client'
+	    if [ `expr ${CHROME_VERSION}` -ge 69 ]; then
+		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+		readonly NINJA_TARGET='peerconnection_client:'
+		readonly BUILD_TARGET='peerconnection_client'
+		readonly INCLUDE_SRC_DIR='.'
+
+	    else
+		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+		readonly NINJA_TARGET='peerconnection_client:'
+		readonly BUILD_TARGET='peerconnection_client'
+		readonly INCLUDE_SRC_DIR='webrtc'
+	    fi
 	    ;;
+
 	'ubuntu' )
-            readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
-            readonly NINJA_TARGET='peerconnection_client:'
-	    readonly BUILD_TARGET='peerconnection_client'
+	    if [ `expr ${CHROME_VERSION}` -ge 69 ]; then
+		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+		readonly NINJA_TARGET='peerconnection_client:'
+		readonly BUILD_TARGET='peerconnection_client'
+		readonly INCLUDE_SRC_DIR='.'
+
+	    else
+		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+		readonly NINJA_TARGET='peerconnection_client:'
+		readonly BUILD_TARGET='peerconnection_client'
+		readonly INCLUDE_SRC_DIR='webrtc'
+	    fi
             ;;
 	* ) echo 'unsupported platform'; exit 1 ;;
     esac
@@ -184,7 +218,7 @@ build() {
 	mkdir -p ${DEST_PATH}
 	cd ${DEST_PATH}
 	fetch --nohooks webrtc
-	gclient sync --with_branch_heads
+	gclient sync --nohooks --with_branch_heads -v -R
 	cd ${DEST_PATH}/src
 
 	if [ "${ID}" == 'raspbian' ]; then
@@ -196,13 +230,18 @@ build() {
     fi
 
     # Change branch for stable chrome version.
+    cd ${DEST_PATH}
+    git submodule foreach 'git config -f $toplevel/.git/config submodule.$name.ignore all'
+    git config --add remote.origin.fetch '+refs/tags/*:refs/tags/*'
+    git config diff.ignoreSubmodules all
+    
+    # git checkout -B "local_work_${CHROME_VERSION}" "branch-heads/${CHROME_VERSION}"
     cd ${DEST_PATH}/src
-    git checkout master
-    git pull
-    git checkout -B "local_work_${CHROME_VERSION}" "branch-heads/${CHROME_VERSION}"
+    git fetch origin
+    git checkout -B "local_work_${CHROME_VERSION}" "refs/remotes/branch-heads/${CHROME_VERSION}"
 
     # Build main.
-    gclient sync --jobs 16
+    gclient sync --with_branch_heads -v -R --jobs 16
     gn gen out/Default --args="is_debug=${ENABLE_DEBUG}"
     ninja -C out/Default ${BUILD_TARGET}
 }
@@ -236,7 +275,7 @@ build_archive() {
     ls ${DEST_PATH}/lib/lib* | sed -e 's/.*\///g' > ${DEST_PATH}/exports_libwebrtc.txt
 
     cd ${DEST_PATH}/src
-    find webrtc -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
+    find ${INCLUDE_SRC_DIR} -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
 
     case "${ARCHIVE_TYPE}" in
 	'zip'  )
