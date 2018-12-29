@@ -275,7 +275,7 @@ build_archive() {
     ls ${DEST_PATH}/lib/lib* | sed -e 's/.*\///g' > ${DEST_PATH}/exports_libwebrtc.txt
 
     cd ${DEST_PATH}/src
-    find ${INCLUDE_SRC_DIR} -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
+    find ${INCLUDE_SRC_DIR} -type d -name 'build' -prune -o -name '*.h' -exec rsync -R {} ${DEST_PATH}/include/ \;
 
     case "${ARCHIVE_TYPE}" in
 	'zip'  )
