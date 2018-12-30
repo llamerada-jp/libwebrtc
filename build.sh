@@ -269,7 +269,9 @@ build_archive() {
     ar cr ${DEST_PATH}/lib/libwebrtc.a ${objs}
 
     # Rename libdl to libopenmax_dl, because libdl is used to library for Dynamic Link.
-    mv ${DEST_PATH}/lib/libdl.a ${DEST_PATH}/lib/libopenmax_dl.a
+    if [ -e ${DEST_PATH}/lib/libdl.a ]; then
+        mv ${DEST_PATH}/lib/libdl.a ${DEST_PATH}/lib/libopenmax_dl.a
+    fi
 
     # List-up lib filenames.
     ls ${DEST_PATH}/lib/lib* | sed -e 's/.*\///g' > ${DEST_PATH}/exports_libwebrtc.txt
