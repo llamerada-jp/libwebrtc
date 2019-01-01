@@ -102,10 +102,10 @@ set_build_info() {
 
     case ${ID} in
 	'macos' )
-	    if [ `expr ${CHROME_VERSION}` -ge 69 ]; then
-		readonly NINJA_FILE=${OUT_PATH}/obj/examples/AppRTCMobile_executable.ninja
-		readonly NINJA_TARGET='obj/examples/AppRTCMobile_executable/AppRTCMobile'
-		readonly BUILD_TARGET='AppRTCMobile'
+	    if [ `expr ${CHROME_VERSION}` -ge 71 ]; then
+		readonly NINJA_FILE=${OUT_PATH}/obj/sdk/mac_framework_objc_shared_library.ninja
+		readonly NINJA_TARGET='mac_framework_objc_shared_library/WebRTC'
+		readonly BUILD_TARGET='obj/sdk/mac_framework_objc_shared_library/WebRTC'
 		readonly INCLUDE_SRC_DIR='.'
 
 	    elif [ `expr ${CHROME_VERSION}` -ge 64 ]; then
@@ -128,7 +128,7 @@ set_build_info() {
 	    fi
             ;;
 	'raspbian' )
-	    if [ `expr ${CHROME_VERSION}` -ge 69 ]; then
+	    if [ `expr ${CHROME_VERSION}` -ge 71 ]; then
 		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
 		readonly NINJA_TARGET='peerconnection_client:'
 		readonly BUILD_TARGET='peerconnection_client'
@@ -143,7 +143,7 @@ set_build_info() {
 	    ;;
 
 	'ubuntu' )
-	    if [ `expr ${CHROME_VERSION}` -ge 69 ]; then
+	    if [ `expr ${CHROME_VERSION}` -ge 71 ]; then
 		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
 		readonly NINJA_TARGET='peerconnection_client:'
 		readonly BUILD_TARGET='peerconnection_client'
@@ -263,10 +263,20 @@ build_archive() {
 	elif [[ ${obj} =~ \.o$ ]]; then
             objs="${objs} ${obj}"
 	elif [[ ${obj} =~ \.a$ ]]; then
-            cp ${obj} ${DEST_PATH}/lib/
+	    local basename=`basename ${obj}`
+	    if [ ! -e ${DEST_PATH}/lib/${basename} ]; then
+		cp ${obj} ${DEST_PATH}/lib/
+	    else
+		local i=1
+		while [ -e ${DEST_PATH}/lib/${basename%.a}_${i}.a ]
+		do
+		    i=i+1
+		done
+		cp ${obj} ${DEST_PATH}/lib/${basename%.a}_${i}.a
+	    fi
 	fi
     done
-    ar cr ${DEST_PATH}/lib/libwebrtc.a ${objs}
+    ar cr ${DEST_PATH}/lib/libmywebrtc.a ${objs}
 
     # Rename libdl to libopenmax_dl, because libdl is used to library for Dynamic Link.
     if [ -e ${DEST_PATH}/lib/libdl.a ]; then
