@@ -311,17 +311,24 @@ build_archive_osx() {
 
 build_archive_linux() {
     cd ${OUT_PATH}
+    objs=''
     script="create libwebrtc.a\n"
     for obj in `cat ${NINJA_FILE} | grep ${NINJA_TARGET}`
     do
 	if [[ ${obj} =~ 'examples' ]]; then
             continue
 
-	elif [[ ${obj} =~ \.o$ ]] || [[ ${obj} =~ \.a$ ]]; then
+	elif [[ ${obj} =~ \.o$ ]]; then
+	    objs="${objs} ${obj}"
+
+	elif [[ ${obj} =~ \.a$ ]]; then
 	    script="${script}addlib ${obj}\n"
 	fi
     done
-    echo -n -e "${script}save\nend" | ar -M
+    ar cr ${DEST_PATH}/lib/libmywebrtc.a ${objs}
+    cd ${DEST_PATH}/lib/
+    echo -n -e "${script}addlib libmywebrtc.a\nsave\nend" | ar -M
+    rm libmywebrtc.a
 }
 
 upload() {
