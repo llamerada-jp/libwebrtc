@@ -254,29 +254,11 @@ build_archive() {
     mkdir -p ${DEST_PATH}/include
     OUT_PATH=${DEST_PATH}/src/out/Default
 
-    cd ${OUT_PATH}
-    objs=''
-    for obj in `cat ${NINJA_FILE} | grep ${NINJA_TARGET}`
-    do
-	if [[ ${obj} =~ 'obj/webrtc/examples' ]]; then
-            continue
-	elif [[ ${obj} =~ \.o$ ]]; then
-            objs="${objs} ${obj}"
-	elif [[ ${obj} =~ \.a$ ]]; then
-	    local basename=`basename ${obj}`
-	    if [ ! -e ${DEST_PATH}/lib/${basename} ]; then
-		cp ${obj} ${DEST_PATH}/lib/
-	    else
-		local i=1
-		while [ -e ${DEST_PATH}/lib/${basename%.a}_${i}.a ]
-		do
-		    i=i+1
-		done
-		cp ${obj} ${DEST_PATH}/lib/${basename%.a}_${i}.a
-	    fi
-	fi
-    done
-    ar cr ${DEST_PATH}/lib/libmywebrtc.a ${objs}
+    if [ "${ID}" == 'macos' ]; then
+	build_archive_osx
+    else
+	build_archive_linux
+    fi
 
     # Rename libdl to libopenmax_dl, because libdl is used to library for Dynamic Link.
     if [ -e ${DEST_PATH}/lib/libdl.a ]; then
@@ -299,6 +281,47 @@ build_archive() {
 	    tar -czf ${ARCHIVE_FILE} lib include exports_libwebrtc.txt
 	    ;;
     esac
+}
+
+build_archive_osx() {
+    cd ${OUT_PATH}
+    objs=''
+    for obj in `cat ${NINJA_FILE} | grep ${NINJA_TARGET}`
+    do
+	if [[ ${obj} =~ 'examples' ]]; then
+            continue
+	elif [[ ${obj} =~ \.o$ ]]; then
+            objs="${objs} ${obj}"
+	elif [[ ${obj} =~ \.a$ ]]; then
+	    local basename=`basename ${obj}`
+	    if [ ! -e ${DEST_PATH}/lib/${basename} ]; then
+		cp ${obj} ${DEST_PATH}/lib/
+	    else
+		local i=1
+		while [ -e ${DEST_PATH}/lib/${basename%.a}_${i}.a ]
+		do
+		    i=i+1
+		done
+		cp ${obj} ${DEST_PATH}/lib/${basename%.a}_${i}.a
+	    fi
+	fi
+    done
+    ar cr ${DEST_PATH}/lib/libmywebrtc.a ${objs}
+}
+
+build_archive_linux() {
+    cd ${OUT_PATH}
+    script="create libwebrtc.a\n"
+    for obj in `cat ${NINJA_FILE} | grep ${NINJA_TARGET}`
+    do
+	if [[ ${obj} =~ 'examples' ]]; then
+            continue
+
+	elif [[ ${obj} =~ \.o$ ]] || [[ ${obj} =~ \.a$ ]]; then
+	    script="${script}addlib ${obj}\n"
+	fi
+    done
+    echo -n -e "${script}save\nend" | ar -M
 }
 
 upload() {
