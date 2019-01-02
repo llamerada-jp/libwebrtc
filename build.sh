@@ -129,7 +129,7 @@ set_build_info() {
             ;;
 	'raspbian' )
 	    if [ `expr ${CHROME_VERSION}` -ge 71 ]; then
-		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+		readonly NINJA_FILE=${OUT_PATH}/obj/examples/peerconnection_client.ninja
 		readonly NINJA_TARGET='peerconnection_client:'
 		readonly BUILD_TARGET='peerconnection_client'
 		readonly INCLUDE_SRC_DIR='.'
@@ -144,7 +144,7 @@ set_build_info() {
 
 	'ubuntu' )
 	    if [ `expr ${CHROME_VERSION}` -ge 71 ]; then
-		readonly NINJA_FILE=${OUT_PATH}/obj/webrtc/examples/peerconnection_client.ninja
+		readonly NINJA_FILE=${OUT_PATH}/obj/examples/peerconnection_client.ninja
 		readonly NINJA_TARGET='peerconnection_client:'
 		readonly BUILD_TARGET='peerconnection_client'
 		readonly INCLUDE_SRC_DIR='.'
