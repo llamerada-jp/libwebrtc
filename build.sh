@@ -312,7 +312,7 @@ build_archive_osx() {
 build_archive_linux() {
     cd ${OUT_PATH}
     objs=''
-    script="create libwebrtc.a\n"
+    script="create ${DEST_PATH}/lib/libwebrtc.a\n"
     for obj in `cat ${NINJA_FILE} | grep ${NINJA_TARGET}`
     do
 	if [[ ${obj} =~ 'examples' ]]; then
@@ -326,9 +326,8 @@ build_archive_linux() {
 	fi
     done
     ar cr ${DEST_PATH}/lib/libmywebrtc.a ${objs}
-    cd ${DEST_PATH}/lib/
-    echo -n -e "${script}addlib libmywebrtc.a\nsave\nend" | ar -M
-    rm libmywebrtc.a
+    echo -n -e "${script}addlib ${DEST_PATH}/lib/libmywebrtc.a\nsave\nend" | ar -M
+    rm ${DEST_PATH}/lib/libmywebrtc.a
 }
 
 upload() {
