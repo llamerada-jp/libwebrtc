@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import getpass
 import json
+import mimetypes
 import os
 import re
 import urllib.request
@@ -12,6 +14,8 @@ import sys
 
 PATH_WORK = 'opt'
 PATH_DEPOT_TOOLS = 'opt/depot_tools'
+GITHUB_PATH = 'https://api.github.com/repos/llamerada-jp/libwebrtc'
+GITHUB_USER = 'llamerada-jp'
 
 # Change directory by ROOT_PATH.
 def util_cd(*path):
@@ -56,6 +60,10 @@ def util_rm(*path):
 # Parser for arguments.
 def parse_args():
     parser = argparse.ArgumentParser(description='This script is ...')
+    parser.add_argument('-A', '--disable_archive', action='store_true',
+                        help="Disable archive sequence.")
+    parser.add_argument('-B', '--disable_build', action='store_true',
+                        help="Disable build sequence.")
     parser.add_argument('-c', '--configure', action='store',
                         default='config.json', type=str,
                         help="Set configuration json file name. 'default: config.json'")
@@ -68,7 +76,10 @@ def parse_args():
                         help="Set arget archtecture")
     parser.add_argument('--chrome_ver', action='store',
                         type=int, help="Set build target Chrome version.")
-    parser.add_argument('-d', '--debug', action='store_true')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help="Set build type to debug mode.")
+    parser.add_argument('-u', '--upload', action='store_true',
+                        help="Upload archive to github release.")
 
     return parser.parse_args()
 
@@ -82,10 +93,10 @@ def get_last_chrome_ver(os):
 
 #
 def get_work_path(conf, *path):
-    path = conf['target_env']
+    target_path = conf['target_env']
     if 'arch' in conf:
-        path = path + '_' + conf['arch']
-    return util_getpath(PATH_WORK, path)
+        target_path = path + '_' + conf['arch']
+    return util_getpath(PATH_WORK, target_path, *path)
 
 #
 def get_archive_name(conf):
@@ -132,7 +143,10 @@ def parse_conf(args):
 
     conf['target_env'] = target_env
     conf['chrome_version'] = chrome_ver
-    conf['debug'] = args.debug
+    conf['enable_archive'] = not args.disable_archive
+    conf['enable_build'] = not args.disable_build
+    conf['enable_debug'] = args.debug
+    conf['enable_upload'] = args.upload
     return conf
 
 #
@@ -170,42 +184,52 @@ def build(conf):
     util_exec('gclient', 'runhooks', '-v')
 
     args = []
-    if 'debug' in conf and conf['debug']:
+    if 'enable_debug' in conf and conf['debug']:
         args.append('is_debug=true')
     if 'arch' in conf:
         args.append("target_cpu=\"" + conf['arch'] + "\"")
 
     util_exec('gn', 'gen', 'out/Default', '--args=' + ' '.join(args))
-    util_exec('ninja', '-C', 'out/Default', conf['build_target'])
+    for build_target in conf['build_targets']:
+        util_exec('ninja', '-C', 'out/Default', build_target)
 
 def archive(conf):
     work_path = get_work_path(conf)
     # Make directory
     util_emptydir(work_path, 'lib')
     util_emptydir(work_path, 'include')
-    util_emptydir(work_path, 'include/webrtc')
     util_cd(work_path, 'src/out/Default')
 
-    target_string = None
+    target_objs = conf['extra_objs']
     for line in  open(conf['ninja_file'], 'r'):
         if line.find(conf['ninja_target']) >= 0:
-            target_string = line
+            target_objs.extend(line.split(' '))
             break
 
     objs = []
-    for obj in target_string.split(' '):
+    for obj in target_objs:
+        is_exclude = False
         for ex in conf['exclude_objs']:
+            # Exclude files.
             if obj.find(ex) >= 0:
-                # Exclude files.
-                continue
-            elif re.search(r'\.o$', obj):
-                # Collect *.o files.
-                objs.append(obj)
-            elif re.search(r'\.a$', obj):
-                # Copy *.a files.
+                is_exclude = True
+                break
+        if is_exclude:
+            continue
+        elif re.search(r'\.o$', obj):
+            # Collect *.o files.
+            objs.append(obj)
+        elif re.search(r'\.a$', obj):
+            # Copy *.a files.
+            if util_exists(util_getpath(work_path, 'lib', os.path.basename(obj))):
+                i = 1
+                while util_exists(util_getpath(work_path, 'lib', os.path.splitext(os.path.basename(obj))[0] + '_' + str(i) + '.a')):
+                    i += 1
+                util_cp(util_getpath(work_path, 'src/out/Default', obj), util_getpath(work_path, 'lib', os.path.splitext(os.path.basename(obj))[0] + '_' + str(i) + '.a'))
+            else:
                 util_cp(util_getpath(work_path, 'src/out/Default', obj), util_getpath(work_path, 'lib'))
     # Generate libwebrtc.a from *.o files.
-    util_exec('ar', 'cr', util_getpath(work_path, 'lib/libwebrtc.a'), *objs)
+    util_exec('ar', 'cr', util_getpath(work_path, 'lib/libmywebrtc.a'), *objs)
 
     # Rename if needed.
     for src, dst in conf['rename_objs'].items():
@@ -219,9 +243,9 @@ def archive(conf):
 
     # Copy header files.
     util_cd(work_path, conf['header_root_path'])
-    util_exec('find', '.', '-name', '*.h', '-exec', 'rsync', '-R', '{}', util_getpath(work_path, 'include/webrtc'), ';')
+    util_exec('find', '.', '-name', '*.h', '-exec', 'rsync', '-R', '{}', util_getpath(work_path, 'include'), ';')
     for ex in conf['exclude_headers']:
-        util_rm(work_path, 'include/webrtc', ex)
+        util_rm(work_path, 'include', ex)
 
     # Archive
     util_cd(work_path)
@@ -231,12 +255,55 @@ def archive(conf):
     elif re.search(r'\.tar\.gz$', archive_name):
         util_exec('tar', 'czvf', archive_name, 'lib', 'include', 'exports_libwebrtc.txt')
 
+def upload(conf):
+    GITHUB_PSWD = getpass.getpass('Password for github: ')
+
+    releases = urllib.request.urlopen(GITHUB_PATH + '/releases').read()
+    releases = json.loads(releases)
+    upload_url = False
+    for entry in releases:
+        if 'body' in entry and str(entry['body']) == str(conf['chrome_version']):
+            upload_url = entry['upload_url']
+            break
+
+    if not upload_url:
+        data = {
+            'tag_name' : 'v' + str(conf['chrome_version']),
+            'target_commitish' : 'master',
+            'name' : 'v' + str(conf['chrome_version']),
+            'body' : str(conf['chrome_version']),
+            'draft' : False,
+            'prerelease' : False
+        }
+        headers = {
+            'Content-Type': 'application/json',
+        }
+        req = urllib.request.Request(GITHUB_PATH + '/releases',
+                                     json.dumps(data).encode(), headers)
+        with urllib.request.urlopen(req, auth=(GITHUB_USER, GITHUB_PSWD)) as res:
+            body = res.read()
+            body = json.loads(body)
+            upload_url = body['upload_url']
+    file_name = get_archive_name(conf)
+    upload_url = re.sub(r'assets.*', '', upload_url)
+    upload_url = upload_url + 'assets?name=' + os.path.basename(file_name)
+    mimetype = mimetypes.types_map[os.path.splitext(file_name)[1]]
+    util_exec('curl', '-v',
+              '-u', GITHUB_USER + ':' + GITHUB_PSWD,
+              '-H', 'Content-Type: ' + mimetype,
+              '--data-binary', '@' + get_work_path(conf, file_name),
+              upload_url)
+
 if __name__ == '__main__':
     global PATH_ROOT
     PATH_ROOT = os.path.dirname(os.path.abspath(__file__))
 
     args = parse_args()
     conf = parse_conf(args)
-    setup(conf)
-    build(conf)
-    archive(conf)
+    if 'enable_build' in conf and conf['enable_build']:
+        setup(conf)
+        build(conf)
+    if 'enable_archive' in conf and conf['enable_archive']:
+        archive(conf)
+    if 'enable_upload' in conf and conf['enable_upload']:
+        upload(conf)

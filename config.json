@@ -6,12 +6,13 @@
     "osx" : [
 	{
 	    "chrome_version" : 0,
-	    "build_target" : "AppRTCDemo",
+	    "build_targets" : ["AppRTCDemo"],
 	    "ninja_file" : "obj/webrtc/examples/AppRTCDemo_executable.ninja",
 	    "ninja_target" : "obj/webrtc/examples/AppRTCDemo_executable/AppRTCDemo:",
 	    "exclude_objs" : [
 		"obj/webrtc/examples"
 	    ],
+	    "extra_objs" : [],
 	    "rename_objs" : {
 		"libdl.a" : "libopenmax_dl.a"
 	    },
@@ -26,30 +27,49 @@
 	},
 	{
 	    "chrome_version" : 57,
-	    "build_target" : "AppRTCMobile",
+	    "build_targets" : ["AppRTCMobile"],
 	    "ninja_file" : "obj/webrtc/examples/AppRTCMobile_executable.ninja",
 	    "ninja_target" : "obj/webrtc/examples/AppRTCMobile_executable/AppRTCMobile"
 	},
 	{
 	    "chrome_version" : 63,
-	    "build_target" : "AppRTCMobile",
+	    "build_targets" : ["AppRTCMobile"],
 	    "ninja_file" : "obj/examples/AppRTCMobile_executable.ninja",
 	    "ninja_target" : "obj/examples/AppRTCMobile_executable/AppRTCMobile",
 	    "exclude_objs" : [
 		"obj/examples"
 	    ],
 	    "header_root_path" : "src"
+	},
+	{
+	    "chrome_version" : 71,
+	    "build_targets" : [
+		"obj/sdk/mac_framework_objc_shared_library/WebRTC",
+		"obj/api/video_codecs/libbuiltin_video_encoder_factory.a",
+		"obj/api/video_codecs/libbuiltin_video_decoder_factory.a"
+	    ],
+	    "ninja_file" : "obj/sdk/mac_framework_objc_shared_library.ninja",
+	    "ninja_target" : "mac_framework_objc_shared_library/WebRTC",
+	    "exclude_objs" : [],
+	    "extra_objs" : [
+		"obj/api/video_codecs/libbuiltin_video_encoder_factory.a",
+		"obj/api/video_codecs/libbuiltin_video_decoder_factory.a"
+	    ],
+	    "rename_objs" : {},
+	    "header_root_path" : "src",
+	    "header_root_path" : "src"
 	}
     ],
     "ubuntu" : [
 	{
 	    "chrome_version" : 0,
-	    "build_target" : "peerconnection_client",
+	    "build_targets" : ["peerconnection_client"],
 	    "ninja_file" : "obj/webrtc/examples/peerconnection_client.ninja",
 	    "ninja_target" : "peerconnection_client:",
 	    "exclude_objs" : [
 		"obj/webrtc/examples"
 	    ],
+	    "extra_objs" : [],
 	    "rename_objs" : {
 		"libdl.a" : "libopenmax_dl.a"
 	    },
