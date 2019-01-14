@@ -4,7 +4,6 @@
 import argparse
 import getpass
 import json
-import mimetypes
 import os
 import re
 import urllib.request
@@ -313,7 +312,7 @@ def upload(conf):
     GITHUB_PSWD = getpass.getpass('Password for github: ')
 
     releases = urllib.request.urlopen(GITHUB_PATH + '/releases').read()
-    releases = json.loads(releases)
+    releases = json.loads(releases.decode('utf-8'))
     upload_url = False
     for entry in releases:
         if 'body' in entry and str(entry['body']) == str(conf['chrome_version']):
@@ -341,10 +340,9 @@ def upload(conf):
     file_name = get_archive_name(conf)
     upload_url = re.sub(r'assets.*', '', upload_url)
     upload_url = upload_url + 'assets?name=' + os.path.basename(file_name)
-    mimetype = mimetypes.types_map[os.path.splitext(file_name)[1]]
     util_exec('curl', '-v',
               '-u', GITHUB_USER + ':' + GITHUB_PSWD,
-              '-H', 'Content-Type: ' + mimetype,
+              '-H', 'Content-Type: ' + conf['mime_type'],
               '--data-binary', '@' + get_work_path(conf, file_name),
               upload_url)
 
