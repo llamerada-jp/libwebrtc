@@ -40,6 +40,12 @@ def util_exec(*cmds):
     print('exec : ' + ' '.join(cmds))
     subprocess.check_call(cmds)
 
+def util_exec_stdin(data, *cmds):
+    print('exec : ' + ' '.join(cmds))
+    print(data)
+    proc = subprocess.Popen(cmds, stdin=subprocess.PIPE)
+    proc.communicate(data.encode('utf-8'))
+
 def util_exists(*path):
     abs_path = util_getpath(*path)
     return os.path.exists(abs_path)
@@ -55,7 +61,10 @@ def util_mv(src, dst):
 def util_rm(*path):
     abs_path = util_getpath(*path)
     if os.path.exists(abs_path):
-        shutil.rmtree(abs_path)
+        if os.path.isdir(abs_path):
+            shutil.rmtree(abs_path)
+        else:
+            os.remove(abs_path)
 
 # Parser for arguments.
 def parse_args():
@@ -95,7 +104,7 @@ def get_last_chrome_ver(os):
 def get_work_path(conf, *path):
     target_path = conf['target_env']
     if 'arch' in conf:
-        target_path = path + '_' + conf['arch']
+        target_path = target_path + '_' + conf['arch']
     return util_getpath(PATH_WORK, target_path, *path)
 
 #
@@ -184,7 +193,7 @@ def build(conf):
     util_exec('gclient', 'runhooks', '-v')
 
     args = []
-    if 'enable_debug' in conf and conf['debug']:
+    if 'enable_debug' in conf and conf['enable_debug']:
         args.append('is_debug=true')
     if 'arch' in conf:
         args.append("target_cpu=\"" + conf['arch'] + "\"")
@@ -199,6 +208,42 @@ def archive(conf):
     util_emptydir(work_path, 'lib')
     util_emptydir(work_path, 'include')
     util_cd(work_path, 'src/out/Default')
+
+    # Build lib file for each environment.
+    if conf['target_env'] == 'osx':
+        archive_osx()
+    else:
+        archive_linux()
+    
+    # Rename if needed.
+    for src, dst in conf['rename_objs'].items():
+        util_mv(util_getpath(work_path, 'lib', src), util_getpath(work_path, 'lib', dst))
+
+    # Listup lib filenames.
+    util_cd(work_path, 'lib')
+    fd = open(util_getpath(work_path, 'exports_libwebrtc.txt'), 'w')
+    fd.write("\n".join([f.name for f in os.scandir() if f.name.startswith('lib')]))
+    fd.close()
+
+    # Copy header files.
+    util_cd(work_path, conf['header_root_path'])
+    if conf["target_env"] == "osx":
+        util_exec('find', '.', '-name', '*.h', '-exec', 'rsync', '-R', '{}', util_getpath(work_path, 'include'), ';')
+    else:
+        util_exec('find', '.', '-name', '*.h', '-exec', 'cp', '--parents', '{}', util_getpath(work_path, 'include'), ';')
+    for ex in conf['exclude_headers']:
+        util_rm(work_path, 'include', ex)
+
+    # Archive
+    util_cd(work_path)
+    archive_name = get_archive_name(conf)
+    if re.search(r'\.zip$', archive_name):
+        util_exec('zip', '-r', archive_name, 'lib', 'include', 'exports_libwebrtc.txt')
+    elif re.search(r'\.tar\.gz$', archive_name):
+        util_exec('tar', 'czvf', archive_name, 'lib', 'include', 'exports_libwebrtc.txt')
+
+def archive_osx(conf):
+    work_path = get_work_path(conf)
 
     target_objs = conf['extra_objs']
     for line in  open(conf['ninja_file'], 'r'):
@@ -231,30 +276,39 @@ def archive(conf):
     # Generate libwebrtc.a from *.o files.
     util_exec('ar', 'cr', util_getpath(work_path, 'lib/libmywebrtc.a'), *objs)
 
-    # Rename if needed.
-    for src, dst in conf['rename_objs'].items():
-        util_mv(util_getpath(work_path, 'lib', src), util_getpath(work_path, 'lib', dst))
+def archive_linux():
+    work_path = get_work_path(conf)
 
-    # Listup lib filenames.
-    util_cd(work_path, 'lib')
-    fd = open(util_getpath(work_path, 'exports_libwebrtc.txt'), 'w')
-    fd.write("\n".join([f.name for f in os.scandir() if f.name.startswith('lib')]))
-    fd.close()
+    target_objs = conf['extra_objs']
+    for line in  open(conf['ninja_file'], 'r'):
+        if line.find(conf['ninja_target']) >= 0:
+            target_objs.extend(line.split(' '))
+            break
+    objs = []
+    script = 'create ' + util_getpath(work_path, 'lib/libwebrtc.a\n')
+    for obj in target_objs:
+        is_exclude = False
+        for ex in conf['exclude_objs']:
+            # Exclude files.
+            if obj.find(ex) >= 0:
+                is_exclude = True
+                break
+        if is_exclude:
+            continue
+        elif re.search(r'\.o$', obj):
+            # Collect *.o files.
+            objs.append(obj)
+        elif re.search(r'\.a$', obj):
+            # Build script
+            script = script + "addlib " + obj + "\n"
 
-    # Copy header files.
-    util_cd(work_path, conf['header_root_path'])
-    util_exec('find', '.', '-name', '*.h', '-exec', 'rsync', '-R', '{}', util_getpath(work_path, 'include'), ';')
-    for ex in conf['exclude_headers']:
-        util_rm(work_path, 'include', ex)
-
-    # Archive
-    util_cd(work_path)
-    archive_name = get_archive_name(conf)
-    if re.search(r'\.zip$', archive_name):
-        util_exec('zip', '-r', archive_name, 'lib', 'include', 'exports_libwebrtc.txt')
-    elif re.search(r'\.tar\.gz$', archive_name):
-        util_exec('tar', 'czvf', archive_name, 'lib', 'include', 'exports_libwebrtc.txt')
-
+    # Generate libwebrtc.a from *.o files.
+    tmplib_name = util_getpath(work_path, 'lib/libmywebrtc.a')
+    util_exec('ar', 'cr', tmplib_name, *objs)
+    script = script + "addlib " + tmplib_name + "\nsave\nend"
+    util_exec_stdin(script, "ar", "-M")
+    util_rm(tmplib_name)
+    
 def upload(conf):
     GITHUB_PSWD = getpass.getpass('Password for github: ')
 

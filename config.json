@@ -56,7 +56,6 @@
 		"obj/api/video_codecs/libbuiltin_video_decoder_factory.a"
 	    ],
 	    "rename_objs" : {},
-	    "header_root_path" : "src",
 	    "header_root_path" : "src"
 	}
     ],
@@ -93,6 +92,10 @@
 		"obj/examples"
 	    ],
 	    "header_root_path" : "src"
+	},
+	{
+	    "chrome_version" : 71,
+	    "rename_objs" : {}
 	}
     ]
 }
