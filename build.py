@@ -213,9 +213,9 @@ def archive(conf):
 
     # Build lib file for each environment.
     if conf['target_env'] == 'osx':
-        archive_osx()
+        archive_osx(conf)
     else:
-        archive_linux()
+        archive_linux(conf)
     
     # Rename if needed.
     for src, dst in conf['rename_objs'].items():
@@ -278,7 +278,7 @@ def archive_osx(conf):
     # Generate libwebrtc.a from *.o files.
     util_exec('ar', 'cr', util_getpath(work_path, 'lib/libmywebrtc.a'), *objs)
 
-def archive_linux():
+def archive_linux(conf):
     work_path = get_work_path(conf)
 
     target_objs = conf['extra_objs']
