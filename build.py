@@ -194,6 +194,9 @@ def build(conf):
     args = []
     if 'enable_debug' in conf and conf['enable_debug']:
         args.append('is_debug=true')
+    else:
+        args.append('is_debug=false')
+
     if 'arch' in conf:
         args.append("target_cpu=\"" + conf['arch'] + "\"")
 
