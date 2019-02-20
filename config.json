@@ -1,9 +1,9 @@
 {
     "chrome_os_map" : {
-	"osx" : "mac",
+	"macos" : "mac",
 	"ubuntu" : "linux"
     },
-    "osx" : [
+    "macos" : [
 	{
 	    "chrome_version" : 0,
 	    "build_targets" : ["AppRTCDemo"],
@@ -23,7 +23,7 @@
 		"tools_webrtc",
 		"examples"
 	    ],
-	    "archive_name" : "libwebrtc-osx-{chrome_version}.zip",
+	    "archive_name" : "libwebrtc-{chrome_version}-macos.zip",
 	    "mime_type" : "application/zip"
 	},
 	{
@@ -83,7 +83,7 @@
 		"tools_webrtc",
 		"examples"
 	    ],
-	    "archive_name" : "libwebrtc-ubuntu-{arch}-{chrome_version}.tar.gz",
+	    "archive_name" : "libwebrtc-{chrome_version}-ubuntu-{arch}.tar.gz",
 	    "mime_type" : "application/x-gzip",
 	    "arch" : ["x64", "x86"]
 	},

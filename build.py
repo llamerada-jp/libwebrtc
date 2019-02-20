@@ -77,13 +77,11 @@ def parse_args():
                         help="Set configuration json file name. 'default: config.json'")
     parser.add_argument('-t', '--target_env', action='store',
                         type=str, required=True,
-                        choices=['osx', 'ubuntu'],
+                        choices=['macos', 'ubuntu'],
                         help="Set target envrionment.")
     parser.add_argument('-a', '--arch', action='store', type=str,
                         choices=['x86', 'x64'],
                         help="Set arget archtecture")
-    parser.add_argument('--chrome_ver', action='store',
-                        type=int, help="Set build target Chrome version.")
     parser.add_argument('-d', '--debug', action='store_true',
                         help="Set build type to debug mode.")
     parser.add_argument('-u', '--upload', action='store_true',
@@ -92,12 +90,27 @@ def parse_args():
     return parser.parse_args()
 
 #
-def get_last_chrome_ver(os):
-    csv = urllib.request.urlopen('https://omahaproxy.appspot.com/all').read()
-    for line in csv.decode('utf-8').split('\n'):
-        m = re.search(os + ',stable,([0-9]+)\.', line)
+def get_last_chrome_info(os):
+    all = json.loads(urllib.request.urlopen('https://omahaproxy.appspot.com/all.json').read())
+    for it1 in all:
+        if it1['os'] == os:
+            for it2 in it1['versions']:
+                if it2['channel'] == 'stable':
+                    return {
+                        'chrome_version': it2['version'],
+                        'chrome_m': int(re.match('(^[0-9]+)', it2['version']).group(1)),
+                        'chrome_commit': it2['branch_commit']
+                    }
+
+#
+def get_webrtc_info(conf):
+    deps = urllib.request.urlopen('https://raw.githubusercontent.com/chromium/chromium/' + conf['chrome_commit'] + '/DEPS').read()
+    for line in deps.decode('utf-8').split('\n'):
+        m = re.search("webrtc_git.*src\.git.*@.*'([a-f0-9]+)'", line)
         if m:
-            return int(m.group(1))
+            return {
+                'webrtc_commit': m.group(1)
+            }
 
 #
 def get_work_path(conf, *path):
@@ -115,6 +128,8 @@ def get_archive_name(conf):
 
 # Parser for configuration file.
 def parse_conf(args):
+    conf = {}
+
     # Load configuration file as JSON.
     fd_js = open(args.configure, 'r')
     js_all = json.load(fd_js)
@@ -124,20 +139,24 @@ def parse_conf(args):
     target_env = args.target_env
     js_env = js_all[target_env]
 
-    # Check chrome version
-    if args.chrome_ver is None:
-        chrome_ver = get_last_chrome_ver(js_all['chrome_os_map'][target_env])
-    else:
-        chrome_ver = int(args.chrome_ver)
+    # Check chrome info
+    chrome_info = get_last_chrome_info(js_all['chrome_os_map'][target_env])
+    conf.update(chrome_info)
+
+    # Check webrtc info
+    webrtc_info = get_webrtc_info(conf)
+    conf.update(webrtc_info)
 
     # Merge envrionment values.
-    conf = {}
     for it_env in js_env:
         # Conditions of skip filter
-        if it_env['chrome_version'] > chrome_ver:
+        if it_env['chrome_version'] > chrome_info['chrome_m']:
             continue
         # Mearge
         conf.update(it_env)
+
+    # Override
+    conf['chrome_version'] = chrome_info['chrome_version']
 
     # Check architecture
     if 'arch' in conf and isinstance(conf['arch'], list):
@@ -150,7 +169,6 @@ def parse_conf(args):
             sys.exit()
 
     conf['target_env'] = target_env
-    conf['chrome_version'] = chrome_ver
     conf['enable_archive'] = not args.disable_archive
     conf['enable_build'] = not args.disable_build
     conf['enable_debug'] = args.debug
@@ -177,18 +195,16 @@ def build(conf):
     util_cd(work_path)
     if not util_exists(work_path, '.gclient'):
         util_exec('fetch', '--nohooks', 'webrtc')
-    util_exec('gclient', 'sync', '--nohooks', '--with_branch_heads', '-v', '-R')
+    util_cd(work_path, 'src')
+    util_exec('git', 'fetch', 'origin')
+    util_exec('git', 'checkout', str(conf['webrtc_commit']))
+    util_exec('gclient', 'sync', '--nohooks')
     # TODO install-build-deps.sh
     util_exec('git', 'submodule', 'foreach',
               "'git config -f $toplevel/.git/config submodule.$name.ignore all'")
     util_exec('git', 'config', '--add', 'remote.origin.fetch', "'+refs/tags/*:refs/tags/*'")
     util_exec('git', 'config', 'diff.ignoreSubmodules', 'all')
 
-    util_cd(work_path, 'src')
-    util_exec('git', 'fetch', 'origin')
-    util_exec('git', 'checkout', '-B', str(conf['chrome_version']),
-              'refs/remotes/branch-heads/' + str(conf['chrome_version']))
-    util_exec('gclient', 'sync', '--with_branch_heads', '-v', '-R')
     util_exec('gclient', 'runhooks', '-v')
 
     args = []
@@ -200,6 +216,7 @@ def build(conf):
     if 'arch' in conf:
         args.append("target_cpu=\"" + conf['arch'] + "\"")
 
+    util_cd(work_path, 'src')
     util_exec('gn', 'gen', 'out/Default', '--args=' + ' '.join(args))
     for build_target in conf['build_targets']:
         util_exec('ninja', '-C', 'out/Default', build_target)
@@ -212,8 +229,8 @@ def archive(conf):
     util_cd(work_path, 'src/out/Default')
 
     # Build lib file for each environment.
-    if conf['target_env'] == 'osx':
-        archive_osx(conf)
+    if conf['target_env'] == 'macos':
+        archive_macos(conf)
     else:
         archive_linux(conf)
     
@@ -229,7 +246,7 @@ def archive(conf):
 
     # Copy header files.
     util_cd(work_path, conf['header_root_path'])
-    if conf["target_env"] == "osx":
+    if conf["target_env"] == "macos":
         util_exec('find', '.', '-name', '*.h', '-exec', 'rsync', '-R', '{}', util_getpath(work_path, 'include'), ';')
     else:
         util_exec('find', '.', '-name', '*.h', '-exec', 'cp', '--parents', '{}', util_getpath(work_path, 'include'), ';')
@@ -244,7 +261,7 @@ def archive(conf):
     elif re.search(r'\.tar\.gz$', archive_name):
         util_exec('tar', 'czvf', archive_name, 'lib', 'include', 'exports_libwebrtc.txt')
 
-def archive_osx(conf):
+def archive_macos(conf):
     work_path = get_work_path(conf)
 
     target_objs = conf['extra_objs']
@@ -318,16 +335,16 @@ def upload(conf):
     releases = json.loads(releases.decode('utf-8'))
     upload_url = False
     for entry in releases:
-        if 'body' in entry and str(entry['body']) == str(conf['chrome_version']):
+        if 'body' in entry and str(entry['body']) == 'm' + str(conf['chrome_m']):
             upload_url = entry['upload_url']
             break
 
     if not upload_url:
         data = {
-            'tag_name' : 'v' + str(conf['chrome_version']),
+            'tag_name' : 'm' + str(conf['chrome_m']),
             'target_commitish' : 'master',
-            'name' : 'v' + str(conf['chrome_version']),
-            'body' : str(conf['chrome_version']),
+            'name' : 'm' + str(conf['chrome_m']),
+            'body' : 'm' + str(conf['chrome_m']),
             'draft' : False,
             'prerelease' : False
         }
