@@ -91,7 +91,7 @@ def parse_args():
 
 #
 def get_last_chrome_info(os):
-    all = json.loads(urllib.request.urlopen('https://omahaproxy.appspot.com/all.json').read())
+    all = json.loads(urllib.request.urlopen('https://omahaproxy.appspot.com/all.json').read().decode('utf-8'))
     for it1 in all:
         if it1['os'] == os:
             for it2 in it1['versions']:
