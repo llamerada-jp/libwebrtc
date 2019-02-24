@@ -186,7 +186,6 @@ def parse_conf(args):
         conf['os_version'] = re.match('([^\n]+)', tmp.decode('utf-8')).group(1)
     if conf['target_env'] == 'ubuntu':
         tmp = util_exec_stdout('lsb_release', '--release')
-        print(tmp)
         conf['os_version'] = re.match('Release:[\s]+([^\s]+)', tmp.decode('utf-8')).group(1)
     return conf
 
