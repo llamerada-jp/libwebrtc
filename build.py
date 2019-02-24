@@ -3,6 +3,7 @@
 
 import argparse
 import getpass
+import base64
 import json
 import os
 import re
@@ -38,6 +39,11 @@ def util_emptydir(*path):
 def util_exec(*cmds):
     print('exec : ' + ' '.join(cmds))
     subprocess.check_call(cmds)
+
+def util_exec_stdout(*cmds):
+    # print('exec : ' + ' '.join(cmds))
+    proc = subprocess.Popen(cmds, stdout=subprocess.PIPE)
+    return proc.stdout.read()
 
 def util_exec_stdin(data, *cmds):
     print('exec : ' + ' '.join(cmds))
@@ -348,15 +354,12 @@ def upload(conf):
             'draft' : False,
             'prerelease' : False
         }
-        headers = {
-            'Content-Type': 'application/json',
-        }
-        req = urllib.request.Request(GITHUB_PATH + '/releases',
-                                     json.dumps(data).encode(), headers)
-        with urllib.request.urlopen(req, auth=(GITHUB_USER, GITHUB_PSWD)) as res:
-            body = res.read()
-            body = json.loads(body)
-            upload_url = body['upload_url']
+        body = util_exec_stdout('curl', '-v', '-u', GITHUB_USER + ':' + GITHUB_PSWD,
+                                '-H', 'Content-Type: application/json',
+                                '-d', json.dumps(data).encode('utf-8'),
+                                GITHUB_PATH + '/releases')
+        body = json.loads(body)
+        upload_url = body['upload_url']
     file_name = get_archive_name(conf)
     upload_url = re.sub(r'assets.*', '', upload_url)
     upload_url = upload_url + 'assets?name=' + os.path.basename(file_name)
