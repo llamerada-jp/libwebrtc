@@ -23,7 +23,7 @@
 		"tools_webrtc",
 		"examples"
 	    ],
-	    "archive_name" : "libwebrtc-{chrome_version}-macos.zip",
+	    "archive_name" : "libwebrtc-{chrome_version}-macosx-{os_version}.zip",
 	    "mime_type" : "application/zip"
 	},
 	{
@@ -83,7 +83,7 @@
 		"tools_webrtc",
 		"examples"
 	    ],
-	    "archive_name" : "libwebrtc-{chrome_version}-ubuntu-{arch}.tar.gz",
+	    "archive_name" : "libwebrtc-{chrome_version}-ubuntu-{os_version}-{arch}.tar.gz",
 	    "mime_type" : "application/x-gzip",
 	    "arch" : ["x64", "x86"]
 	},

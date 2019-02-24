@@ -179,6 +179,14 @@ def parse_conf(args):
     conf['enable_build'] = not args.disable_build
     conf['enable_debug'] = args.debug
     conf['enable_upload'] = args.upload
+
+    # OS version
+    if conf['target_env'] == 'macos':
+        tmp = util_exec_stdout('sw_vers', '-productVersion')
+        conf['os_version'] = re.match('([^\n]+)', tmp.decode('utf-8')).group(1)
+    if conf['target_env'] == 'ubuntu':
+        tmp = util_exec_stdout('lsb_release', '--release')
+        conf['os_version'] = re.match('Release:[ ]+([^ ]+)\n', tmp.decode('utf-8')).group(1)
     return conf
 
 #
