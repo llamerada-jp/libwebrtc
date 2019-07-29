@@ -58,6 +58,26 @@
 	    ],
 	    "rename_objs" : {},
 	    "header_root_path" : "src"
+	},
+	{
+	    "chrome_version" : 75,
+	    "build_targets" : [
+		"obj/sdk/mac_framework_objc_shared_library/WebRTC",
+		"obj/api/video_codecs/libbuiltin_video_encoder_factory.a",
+		"obj/api/video_codecs/libbuiltin_video_decoder_factory.a"
+	    ],
+	    "ninja_file" : "obj/sdk/mac_framework_objc_shared_library.ninja",
+	    "ninja_target" : "mac_framework_objc_shared_library/WebRTC",
+	    "exclude_objs" : [],
+	    "extra_objs" : [
+		"obj/api/video_codecs/libbuiltin_video_encoder_factory.a",
+		"obj/api/video_codecs/libbuiltin_video_decoder_factory.a",
+		"obj/media/librtc_encoder_simulcast_proxy.a",
+		"obj/media/librtc_simulcast_encoder_adapter.a",
+		"obj/media/librtc_internal_video_codecs.a"
+	    ],
+	    "rename_objs" : {},
+	    "header_root_path" : "src"
 	}
     ],
     "ubuntu" : [
