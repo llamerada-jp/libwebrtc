@@ -12,6 +12,7 @@
 	    "exclude_objs" : [
 		"obj/webrtc/examples"
 	    ],
+            "extra_args" : [],
 	    "extra_objs" : [],
 	    "rename_objs" : {
 		"libdl.a" : "libopenmax_dl.a"
@@ -78,7 +79,12 @@
 	    ],
 	    "rename_objs" : {},
 	    "header_root_path" : "src"
-	}
+	},
+	{
+	    "chrome_version" : 76,
+            "extra_args" : ["rtc_include_opus=false", "rtc_enable_protobuf=false", "rtc_build_json=false",
+                            "rtc_build_opus=false", "rtc_use_lto=true"]
+        }
     ],
     "ubuntu" : [
 	{

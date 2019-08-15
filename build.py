@@ -221,7 +221,7 @@ def build(conf):
 
     util_exec('gclient', 'runhooks', '-v')
 
-    args = []
+    args = conf['extra_args']
     if 'enable_debug' in conf and conf['enable_debug']:
         args.append('is_debug=true')
     else:
