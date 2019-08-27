@@ -83,7 +83,9 @@
 	{
 	    "chrome_version" : 76,
             "extra_args" : ["rtc_include_opus=false", "rtc_enable_protobuf=false",
-                            "rtc_build_opus=false", "rtc_use_lto=true"]
+			    "rtc_build_json=false",
+                            "rtc_build_opus=false", "rtc_use_lto=true", "use_sysroot=false",
+			    "use_custom_libcxx=false"]
         }
     ],
     "ubuntu" : [
