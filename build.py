@@ -194,6 +194,7 @@ def setup(conf):
     # Update or get depot tools.
     if os.path.exists(util_getpath(PATH_DEPOT_TOOLS)):
         util_cd(PATH_DEPOT_TOOLS)
+        util_exec('git', 'checkout', 'master')
         util_exec('git', 'pull')
     else:
         util_exec('git', 'clone',
