@@ -97,6 +97,26 @@
 				"use_sysroot=false",
 				"use_custom_libcxx=false"
 			]
+		},
+		{
+			"chrome_version": 78,
+			"build_targets": [
+				"obj/sdk/mac_framework_objc_shared_library/WebRTC",
+				"create_peerconnection_factory"
+			],
+			"extra_args": [
+				"rtc_include_ilbc=false",
+				"rtc_include_opus=false",
+				"rtc_include_builtin_video_codecs=false",
+				"rtc_enable_protobuf=false",
+				"rtc_build_opus=false",
+				"rtc_use_x11=false",
+				"use_sysroot=false",
+				"use_custom_libcxx=false"
+			],
+			"extra_objs": [
+				"obj/api/libcreate_peerconnection_factory.a"
+			]
 		}
 	],
 	"ubuntu": [
@@ -152,6 +172,20 @@
 				"rtc_enable_protobuf=false",
 				"rtc_build_opus=false",
 				"rtc_use_lto=true",
+				"use_sysroot=false",
+				"use_custom_libcxx=false"
+			]
+		},
+		{
+			"chrome_version": 78,
+			"header_root_path": "src",
+			"extra_args": [
+				"rtc_include_ilbc=false",
+				"rtc_include_opus=false",
+				"rtc_include_builtin_video_codecs=false",
+				"rtc_enable_protobuf=false",
+				"rtc_build_opus=false",
+				"rtc_use_x11=false",
 				"use_sysroot=false",
 				"use_custom_libcxx=false"
 			]
