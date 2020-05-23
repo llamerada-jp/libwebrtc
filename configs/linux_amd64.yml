@@ -1,0 +1,57 @@
+ChromeOsStr: linux
+BuildDepsOpts:
+- '--no-arm'
+- '--no-chromeos-fonts'
+- '--no-nacl'
+GnOpts:
+- 'rtc_include_ilbc=false'
+- 'rtc_include_opus=false'
+- 'rtc_include_builtin_video_codecs=false'
+- 'rtc_enable_protobuf=false'
+- 'rtc_build_opus=false'
+- 'rtc_use_x11=false'
+- 'target_cpu="x64"'
+- 'use_rtti=true'
+- 'use_sysroot=false'
+- 'use_custom_libcxx=false'
+BuildTargets:
+- 'peerconnection_client'
+NinjaFile: obj/examples/peerconnection_client.ninja
+NinjaTarget: 'peerconnection_client:'
+ExcludeFiles:
+- 'obj/examples'
+- 'obj/test'
+Headers:
+- 'common_audio/include'
+- 'media/base'
+- 'media/engine'
+- 'modules/audio_coding/include'
+- 'modules/audio_device/include'
+- 'modules/audio_processing/include'
+#- 'modules/bitrate_controller/include'
+- 'modules/congestion_controller/include'
+- 'modules/include'
+- 'modules/remote_bitrate_estimator/include'
+- 'modules/rtp_rtcp/include'
+- 'modules/rtp_rtcp/source'
+- 'modules/utility/include'
+- 'modules/video_coding/codecs/h264/include'
+- 'modules/video_coding/codecs/vp8/include'
+- 'modules/video_coding/codecs/vp9/include'
+- 'modules/video_coding/include'
+- 'pc'
+#- 'rtc_base'
+- 'system_wrappers/include'
+# add by myself
+- '.'
+- 'call'
+- 'common_video/include'
+- 'logging/rtc_event_log'
+- 'logging/rtc_event_log/events'
+- 'modules/rtp_rtcp/source/rtcp_packet'
+- 'p2p/base'
+HeadersWithSubdir:
+- 'api'
+# add by myself
+- 'rtc_base'
+- 'third_party/abseil-cpp/absl'
