@@ -25,6 +25,7 @@ const (
 type Config struct {
 	ChromeOsStr       string
 	BuildDepsOpts     []string
+	SysrootArch       *string
 	GnOpts            []string
 	BuildTargets      []string
 	NinjaFile         string
@@ -153,12 +154,16 @@ func (b *build) makeDirs() error {
 	b.workDir = path.Join(b.optDir, fmt.Sprintf("%s_%s", runtime.GOOS, b.targetArch))
 	b.tmpDir = path.Join(b.workDir, "tmp")
 
-	unlink(b.tmpDir)
-	if err := os.MkdirAll(b.tmpDir, os.ModePerm); err != nil {
-		return err
-	}
 	unlink(path.Join(b.workDir, "include"))
 	if err := os.MkdirAll(path.Join(b.workDir, "include"), os.ModePerm); err != nil {
+		return err
+	}
+	unlink(path.Join(b.workDir, "lib"))
+	if err := os.MkdirAll(path.Join(b.workDir, "lib"), os.ModePerm); err != nil {
+		return err
+	}
+	unlink(b.tmpDir)
+	if err := os.MkdirAll(b.tmpDir, os.ModePerm); err != nil {
 		return err
 	}
 	return nil
@@ -176,7 +181,7 @@ func (b *build) setupDepotTools() error {
 	}
 
 	path := os.Getenv("PATH")
-	if err := os.Setenv("PATH", fmt.Sprintf("%s:%s", path, depotToolsPath)); err != nil {
+	if err := os.Setenv("PATH", fmt.Sprintf("%s:%s", depotToolsPath, path)); err != nil {
 		return err
 	}
 
@@ -252,14 +257,21 @@ func (b *build) build() error {
 	depOpts := b.config.BuildDepsOpts
 	depOpts = append(depOpts, "--no-prompt")
 	command(sd, "./build/install-build-deps.sh", depOpts...)
-
-	command(sd, "gclient", "sync", "-D")
+	if b.config.SysrootArch != nil {
+		command(sd, "./build/linux/sysroot_scripts/install-sysroot.py", "--arch="+*b.config.SysrootArch)
+	}
+	command(sd, "gclient", "sync")
 
 	opts := b.config.GnOpts
 	if b.isDebug {
 		opts = append(opts, "is_debug=true")
 	} else {
 		opts = append(opts, "is_debug=false")
+	}
+	if b.config.SysrootArch != nil {
+		opts = append(opts, "use_sysroot=true")
+	} else {
+		opts = append(opts, "use_sysroot=false")
 	}
 	command(sd, "gn", "gen", "out/Default", "--args="+strings.Join(opts, " "))
 
@@ -286,7 +298,7 @@ func (b *build) makeLibLinux() error {
 		}
 	}
 	oFiles := make([]string, 0)
-	script := "create " + path.Join(b.workDir, "libwebrtc.a\n")
+	script := "create " + path.Join(b.workDir, "lib", "libwebrtc.a\n")
 NEXT_FILE:
 	for _, file := range linkedFiles {
 		for _, ex := range b.config.ExcludeFiles {

@@ -43,8 +43,7 @@ func init() {
 
 func getDefaultArch() string {
 	var archMap = map[string]string{
-		"386":   "x86",
-		"amd64": "x64",
+		"386": "i386",
 	}
 
 	arch, ok := archMap[runtime.GOARCH]

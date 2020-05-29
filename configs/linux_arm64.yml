@@ -1,8 +1,9 @@
 ChromeOsStr: linux
 BuildDepsOpts:
-- '--no-arm'
+- '--arm'
 - '--no-chromeos-fonts'
 - '--no-nacl'
+SysrootArch: arm64
 GnOpts:
 - 'libyuv_disable_jpeg=true'
 - 'rtc_build_opus=false'
@@ -17,7 +18,7 @@ GnOpts:
 - 'rtc_use_dummy_audio_file_devices=true'
 - 'rtc_use_gtk=false'
 - 'rtc_use_x11=false'
-- 'target_cpu="x64"'
+- 'target_cpu="arm64"'
 - 'target_os="linux"'
 - 'use_custom_libcxx=false'
 - 'use_libjpeg_turbo=false'
