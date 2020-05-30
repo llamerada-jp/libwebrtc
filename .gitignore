@@ -1,3 +1,5 @@
 /.vscode/
 /go.sum
 /opt/
+/test/main-*
+/test/test-*
