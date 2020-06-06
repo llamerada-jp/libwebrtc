@@ -1,3 +1,0 @@
-[submodule "test/picojson"]
-	path = test/picojson
-	url = https://github.com/kazuho/picojson.git

@@ -14,4 +14,4 @@ You can use these files by unarchive it and link it to your programs.
 ## License
 License follows original sources of it. See below documents.
 
-https://webrtc.org/license/
+https://webrtc.org/support/license

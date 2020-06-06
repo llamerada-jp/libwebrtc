@@ -40,16 +40,16 @@ CXX_FLAGS := $(CXX_FLAGS) -I $(LIBWEBRTC_PATH)/include/third_party/abseil-cpp
 # linker option
 LD_FLAGS := $(LD_FLAGS) -L $(LIBWEBRTC_PATH)/lib -lwebrtc -lpthread
 
-default: test
+default: test-$(ARCH)
 
-test-$(ARCH): main.cpp
-	$(CXX) $(CXX_FLAGS) -o main-$(ARCH).o -c $^
-	$(CXX) main-$(ARCH).o $(LD_FLAGS) -o $@
+test-$(ARCH): test.cpp
+	$(CXX) $(CXX_FLAGS) -o test-$(ARCH).o -c $^ -g -O0
+	$(CXX) test-$(ARCH).o $(LD_FLAGS) -o $@
 
 run: test-$(ARCH)
 	$(QEMU) ./test-$(ARCH)
 
 clean:
-	$(RM) test-* main-*
+	$(RM) test-*
 
 .PHONY: clean
