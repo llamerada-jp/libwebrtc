@@ -5,6 +5,7 @@ BuildDepsOpts:
 - '--no-nacl'
 SysrootArch: arm
 GnOpts:
+- 'arm_float_abi="hard"'
 - 'libyuv_disable_jpeg=true'
 - 'rtc_build_opus=false'
 - 'rtc_enable_protobuf=false'

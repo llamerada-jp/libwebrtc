@@ -145,6 +145,9 @@ func Execute(config *Config, targetArch string, isDebug bool) error {
 	if err := build.collectHeaders(); err != nil {
 		return err
 	}
+	if err := build.makeArchive(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -345,5 +348,13 @@ func (b *build) collectHeaders() error {
 			"rsync", "-R", "{}", path.Join(b.workDir, "include"), ";")
 	}
 
+	return nil
+}
+
+func (b *build) makeArchive() error {
+	if runtime.GOOS == "linux" {
+		fname := fmt.Sprintf("libwebrtc-%s-linux-%s.tar.gz", b.chromeVersion, b.targetArch)
+		command(b.workDir, "tar", "cvzf", fname, "include", "lib")
+	}
 	return nil
 }

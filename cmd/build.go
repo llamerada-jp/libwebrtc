@@ -37,19 +37,6 @@ var buildCmd = &cobra.Command{
 
 func init() {
 	buildCmd.PersistentFlags().BoolVar(&isDebug, "is-debug", false, "enable debug flag")
-	buildCmd.PersistentFlags().StringVar(&targetArch, "arch", getDefaultArch(), "target CPU architecture")
+	buildCmd.PersistentFlags().StringVar(&targetArch, "arch", "amd64", "target CPU architecture")
 	rootCmd.AddCommand(buildCmd)
-}
-
-func getDefaultArch() string {
-	var archMap = map[string]string{
-		"386": "i386",
-	}
-
-	arch, ok := archMap[runtime.GOARCH]
-	if !ok {
-		arch = runtime.GOARCH
-	}
-
-	return arch
 }
