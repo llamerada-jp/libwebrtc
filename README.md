@@ -84,6 +84,18 @@ Options for [`install-build-deps.sh`](https://chromium.googlesource.com/chromium
 
 #### GnOpts
 
+Options for GN build configuration tool.
+You can find help on the following pages
+
+https://www.chromium.org/developers/gn-build-configuration
+
+If you want more configuration, you can run the following command to get a list of options after executing the build once.
+
+```
+cd opt/linux_amd64/src
+../../depot_tools/gn args out/Default/ --list
+```
+
 #### Headers, HeadersWithSubdir
 
 Source list of header files to be archived.
