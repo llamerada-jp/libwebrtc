@@ -10,7 +10,7 @@ ifeq ($(ARCH),i386)
 	QEMU := qemu-i386-static
 endif
 
-ifeq ($(ARCH),arm)
+ifeq ($(ARCH),armhf)
 	CXX := arm-linux-gnueabihf-g++
 	QEMU := qemu-arm-static
 endif
