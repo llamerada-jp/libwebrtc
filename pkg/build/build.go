@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -50,6 +49,7 @@ type build struct {
 	tmpDir  string
 	workDir string
 
+	targetOS string
 	// configurations from command line
 	targetArch string
 	isDebug    bool
@@ -113,9 +113,10 @@ func unlink(path string) {
 	}
 }
 
-func Execute(config *Config, targetArch string, isDebug bool) error {
+func Execute(config *Config, targetOS, targetArch string, isDebug bool) error {
 	build := &build{
 		config:     config,
+		targetOS:   targetOS,
 		targetArch: targetArch,
 		isDebug:    isDebug,
 	}
@@ -136,7 +137,7 @@ func Execute(config *Config, targetArch string, isDebug bool) error {
 		return err
 	}
 
-	switch runtime.GOOS {
+	switch targetOS {
 	case "linux":
 		if err := build.makeLibLinux(); err != nil {
 			return err
@@ -154,7 +155,7 @@ func Execute(config *Config, targetArch string, isDebug bool) error {
 func (b *build) makeDirs() error {
 	pwd, _ := os.Getwd()
 	b.optDir = path.Join(pwd, "opt")
-	b.workDir = path.Join(b.optDir, fmt.Sprintf("%s_%s", runtime.GOOS, b.targetArch))
+	b.workDir = path.Join(b.optDir, fmt.Sprintf("%s_%s", b.targetOS, b.targetArch))
 	b.tmpDir = path.Join(b.workDir, "tmp")
 
 	unlink(path.Join(b.workDir, "include"))
@@ -255,15 +256,17 @@ func (b *build) build() error {
 
 	sd := path.Join(b.workDir, "src")
 	command(sd, "git", "fetch", "origin")
-	command(sd, "git", "clean", "-df")
+	// command(sd, "git", "clean", "-df")
 	command(sd, "git", "checkout", b.webrtcCommitID)
-	depOpts := b.config.BuildDepsOpts
-	depOpts = append(depOpts, "--no-prompt")
-	command(sd, "./build/install-build-deps.sh", depOpts...)
-	if b.config.SysrootArch != nil {
-		command(sd, "./build/linux/sysroot_scripts/install-sysroot.py", "--arch="+*b.config.SysrootArch)
+	if b.targetOS == "linux" {
+		depOpts := b.config.BuildDepsOpts
+		depOpts = append(depOpts, "--no-prompt")
+		command(sd, "./build/install-build-deps.sh", depOpts...)
+		if b.config.SysrootArch != nil {
+			command(sd, "./build/linux/sysroot_scripts/install-sysroot.py", "--arch="+*b.config.SysrootArch)
+		}
 	}
-	command(sd, "gclient", "sync")
+	command(sd, "gclient", "sync", "-D")
 
 	opts := b.config.GnOpts
 	if b.isDebug {
@@ -352,7 +355,7 @@ func (b *build) collectHeaders() error {
 }
 
 func (b *build) makeArchive() error {
-	if runtime.GOOS == "linux" {
+	if b.targetOS == "linux" {
 		fname := fmt.Sprintf("libwebrtc-%s-linux-%s.tar.gz", b.chromeVersion, b.targetArch)
 		command(b.workDir, "tar", "cvzf", fname, "include", "lib")
 	}

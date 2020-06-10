@@ -19,7 +19,11 @@ var buildCmd = &cobra.Command{
 	Short: "build libwebrtc",
 	Long:  "TBD",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		viper.SetConfigFile(path.Join("configs", fmt.Sprintf("%s_%s.yml", runtime.GOOS, targetArch)))
+		targetOS := runtime.GOOS
+		if targetOS == "darwin" {
+			targetOS = "macos"
+		}
+		viper.SetConfigFile(path.Join("configs", fmt.Sprintf("%s_%s.yml", targetOS, targetArch)))
 		if err := viper.ReadInConfig(); err != nil {
 			return err
 		}
@@ -27,7 +31,7 @@ var buildCmd = &cobra.Command{
 		if err := viper.Unmarshal(&config); err != nil {
 			return err
 		}
-		if err := build.Execute(&config, targetArch, isDebug); err != nil {
+		if err := build.Execute(&config, targetOS, targetArch, isDebug); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}

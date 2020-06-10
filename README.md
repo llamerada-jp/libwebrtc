@@ -57,6 +57,15 @@ go run . test --arch=arm64
 
 There is an archive file in `opt/linux_arm64`.
 
+### Build and test for macos
+
+```sh
+go run . build
+go run . test
+```
+
+There is an archive file in `opt/macos_amd64`.
+
 ## Configuration
 
 There are configuration files in `configs/`.
@@ -65,6 +74,7 @@ You can customize the build option by editing files in `configs/`.
 #### ChromeOsStr
 
 A string used to match the operating system of the following sites.
+This option is ignored without linux.
 
 https://omahaproxy.appspot.com/
 
