@@ -26,9 +26,11 @@ CXX_FLAGS := $(CXX_FLAGS) -std=c++14 -fvisibility=hidden -fvisibility-inlines-hi
 # build option by OS
 ifeq ($(shell uname),Linux)
 	CXX_FLAGS := $(CXX_FLAGS) -DWEBRTC_LINUX=1 -DWEBRTC_POSIX=1
+	LD_FLAGS := $(LD_FLAGS) -lpthread
 	OS := linux
 else
 	CXX_FLAGS := $(CXX_FLAGS) -DWEBRTC_MAC=1 -DWEBRTC_POSIX=1
+	LD_FLAGS := $(LD_FLAGS) -framework Foundation
 	OS := macos
 endif
 
@@ -38,7 +40,7 @@ CXX_FLAGS := $(CXX_FLAGS) -I $(LIBWEBRTC_PATH)/include
 CXX_FLAGS := $(CXX_FLAGS) -I $(LIBWEBRTC_PATH)/include/third_party/abseil-cpp
 
 # linker option
-LD_FLAGS := $(LD_FLAGS) -L $(LIBWEBRTC_PATH)/lib -lwebrtc -lpthread
+LD_FLAGS := $(LD_FLAGS) -L $(LIBWEBRTC_PATH)/lib -lwebrtc
 
 default: test-$(ARCH)
 

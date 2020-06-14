@@ -1,5 +1,6 @@
 ChromeOsStr: mac
 GnOpts:
+- 'is_component_build=false'
 - 'rtc_build_opus=false'
 - 'rtc_enable_protobuf=false'
 - 'rtc_include_builtin_audio_codecs=false'
@@ -13,12 +14,13 @@ GnOpts:
 - 'rtc_use_gtk=false'
 - 'rtc_use_x11=false'
 - 'target_cpu="x64"'
+- 'target_os="mac"'
 - 'use_custom_libcxx=false'
 - 'use_rtti=true'
 BuildTargets:
 - 'obj/sdk/mac_framework_objc_shared_library/WebRTC'
-NinjaFile: obj/examples/peerconnection_client.ninja
-NinjaTarget: 'peerconnection_client:'
+NinjaFile: obj/sdk/mac_framework_objc_shared_library.ninja
+NinjaTarget: 'obj/sdk/mac_framework_objc_shared_library/WebRTC.TOC:'
 ExcludeFiles:
 - 'obj/examples'
 - 'obj/test'

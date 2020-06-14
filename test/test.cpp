@@ -47,6 +47,7 @@ class Connection {
   // When the status of the DataChannel changes, determine if the connection is complete.
   // DataChannelのstateが変化したら、接続が完了したか確かめる。
   void on_state_change() {
+    std::cout << "state: " << data_channel->state() << std::endl;
     if (data_channel->state() == webrtc::DataChannelInterface::kOpen && on_success) {
       on_success();
     }
@@ -473,11 +474,13 @@ int main(int argc, char *argv[]) {
 
   webrtc1.on_success([&]() {
     std::lock_guard<std::mutex> lock(mtx);
+    std::cout << "webrtc1" << std::endl;
     success_flg1 = true;
     cond.notify_all();
   });
   webrtc2.on_success([&]() {
     std::lock_guard<std::mutex> lock(mtx);
+    std::cout << "webrtc2" << std::endl;
     success_flg2 = true;
     cond.notify_all();
   });
@@ -499,18 +502,21 @@ int main(int argc, char *argv[]) {
   }
   webrtc1.push_reply_sdp(answer_sdp);
 
-  sleep(3);
-  {
+  while (true) {
+    sleep(1);
     std::unique_lock<std::mutex> lock(mtx);
     cond.wait(lock, [&]() { return (ice_flg1 && ice_flg2); });
-    for (auto &it : ice_list1) {
-      webrtc2.push_ice(it);
+    if (!ice_list1.empty()) {
+      webrtc2.push_ice(ice_list1.front());
+      ice_list1.pop_front();
     }
-    for (auto &it : ice_list2) {
-      webrtc1.push_ice(it);
+    if (!ice_list2.empty()) {
+      webrtc1.push_ice(ice_list2.front());
+      ice_list2.pop_front();
     }
-    ice_list1.clear();
-    ice_list2.clear();
+    if (success_flg1 || success_flg2) {
+      break;
+    }
   }
 
   {

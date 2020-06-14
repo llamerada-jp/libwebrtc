@@ -142,6 +142,10 @@ func Execute(config *Config, targetOS, targetArch string, isDebug bool) error {
 		if err := build.makeLibLinux(); err != nil {
 			return err
 		}
+	case "macos":
+		if err := build.makeLibMacos(); err != nil {
+			return err
+		}
 	}
 	if err := build.collectHeaders(); err != nil {
 		return err
@@ -325,6 +329,49 @@ NEXT_FILE:
 	script = script + "addlib " + libtmp + "\nsave\nend"
 	unlink(path.Join(b.workDir, "libwebrtc.a"))
 	commandStdin(b.workDir, script, "ar", "-M")
+	return nil
+}
+
+func (b *build) makeLibMacos() error {
+	fp, err := os.Open(path.Join(b.workDir, "src", "out", "Default", b.config.NinjaFile))
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	linkedFiles := make([]string, 0)
+	scanner := bufio.NewScanner(fp)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, b.config.NinjaTarget) {
+			linkedFiles = append(linkedFiles, strings.Split(line, " ")...)
+		}
+	}
+	oFiles := make([]string, 0)
+	aFiles := make([]string, 0)
+NEXT_FILE:
+	for _, file := range linkedFiles {
+		if strings.HasSuffix(file, "_objc.a") {
+			continue
+		}
+		for _, ex := range b.config.ExcludeFiles {
+			if strings.Contains(file, ex) {
+				continue NEXT_FILE
+			}
+		}
+		if strings.HasSuffix(file, ".o") {
+			oFiles = append(oFiles, path.Join("src", "out", "Default", file))
+		}
+		if strings.HasSuffix(file, ".a") {
+			aFiles = append(aFiles, path.Join("src", "out", "Default", file))
+		}
+	}
+	libtmp := path.Join(b.tmpDir, "libmywebrtc.a")
+	args := append([]string{"cr", libtmp}, oFiles...)
+	command(b.workDir, "ar", args...)
+	aFiles = append(aFiles, libtmp)
+	args = append([]string{"-o", path.Join(b.workDir, "lib", "libwebrtc.a")}, aFiles...)
+	command(b.workDir, "libtool", args...)
 	return nil
 }
 
