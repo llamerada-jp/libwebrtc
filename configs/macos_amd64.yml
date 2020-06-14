@@ -1,6 +1,5 @@
 ChromeOsStr: mac
 GnOpts:
-- 'libyuv_disable_jpeg=true'
 - 'rtc_build_opus=false'
 - 'rtc_enable_protobuf=false'
 - 'rtc_include_builtin_audio_codecs=false'
@@ -14,13 +13,10 @@ GnOpts:
 - 'rtc_use_gtk=false'
 - 'rtc_use_x11=false'
 - 'target_cpu="x64"'
-- 'target_os="linux"'
 - 'use_custom_libcxx=false'
-- 'use_libjpeg_turbo=false'
 - 'use_rtti=true'
-- 'use_system_libjpeg=true'
 BuildTargets:
-- 'peerconnection_client'
+- 'obj/sdk/mac_framework_objc_shared_library/WebRTC'
 NinjaFile: obj/examples/peerconnection_client.ninja
 NinjaTarget: 'peerconnection_client:'
 ExcludeFiles:
