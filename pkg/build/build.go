@@ -406,5 +406,9 @@ func (b *build) makeArchive() error {
 		fname := fmt.Sprintf("libwebrtc-%s-linux-%s.tar.gz", b.chromeVersion, b.targetArch)
 		command(b.workDir, "tar", "cvzf", fname, "include", "lib")
 	}
+	if b.targetOS == "macos" {
+		fname := fmt.Sprintf("libwebrtc-%s-macos-%s.zip", b.chromeVersion, b.targetArch)
+		command(b.workDir, "zip", "-r", fname, "include", "lib")
+	}
 	return nil
 }
