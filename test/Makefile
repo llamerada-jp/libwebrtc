@@ -40,7 +40,7 @@ CXX_FLAGS := $(CXX_FLAGS) -I $(LIBWEBRTC_PATH)/include
 CXX_FLAGS := $(CXX_FLAGS) -I $(LIBWEBRTC_PATH)/include/third_party/abseil-cpp
 
 # linker option
-LD_FLAGS := $(LD_FLAGS) -L $(LIBWEBRTC_PATH)/lib -lwebrtc
+LD_FLAGS := -L $(LIBWEBRTC_PATH)/lib -lwebrtc $(LD_FLAGS)
 
 default: test-$(ARCH)
 
