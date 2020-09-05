@@ -1,5 +1,5 @@
-# libwebrtc
-It is a build program of WebRTC native library from Chromium. The purpose of this repository is making easy to use WebRTC native library by sharing pre-compiled libraries.
+# libwebrtc for DataChannel
+It is a building program of WebRTC native library from Chromium. This building program configured for only enable DataChannel without multimedia features. The purpose of this repository is making easy to use WebRTC native library by sharing pre-compiled libraries.
 
 Build sequence of program is based on below documents.
 
@@ -7,9 +7,16 @@ http://webrtc.github.io/webrtc-org/native-code/development/
 
 This program automatically uses the latest stable version of WebRTC's source code.
 
+## Requirements
+
+- golang 1.13 or later
+- Other requirement environments are depend on [`Chromium project`](https://chromium.googlesource.com/chromium/src/+/master/docs/linux/build_instructions.md)
+
 ## How to use
 
 ### Build and test for linux with amd64
+
+At amd64 linux environment.
 
 ```sh
 go run . build
@@ -19,6 +26,8 @@ go run . test
 There is an archive file in `opt/linux_amd64`.
 
 ### Build and test for linux with i386
+
+At amd64 linux environment.
 
 ```sh
 sudo apt install qemu-usr-static g++-i686-linux-gnu
@@ -30,6 +39,8 @@ go run . test --arch=i386
 There is an archive file in `opt/linux_i386`.
 
 ### Build and test for linux with armhf
+
+At amd64 linux environment.
 
 ```sh
 sudo apt install qemu-usr-static g++-arm-linux-gnueabihf
@@ -45,6 +56,8 @@ There is an archive file in `opt/linux_armhf`.
 
 ### Build and test for linux with arm64
 
+At amd64 linux environment.
+
 ```sh
 sudo apt install qemu-usr-static g++-aarch64-linux-gnu
 
@@ -58,6 +71,8 @@ go run . test --arch=arm64
 There is an archive file in `opt/linux_arm64`.
 
 ### Build and test for macos
+
+At macos environment.
 
 ```sh
 go run . build
