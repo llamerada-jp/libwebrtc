@@ -44,12 +44,10 @@ At amd64 linux environment.
 
 ```sh
 sudo apt install qemu-user-static g++-arm-linux-gnueabihf
-
-sudo ln -s /usr/arm-linux-gnueabihf/lib /lib/arm-linux-gnueabihf
-sudo ln -s /lib/arm-linux-gnueabihf/ld-2.*.so /lib/ld-linux-armhf.so.3
+sudo ln -s /usr/arm-linux-gnueabihf/lib/ld-2.*.so /lib/ld-linux-armhf.so.3
 
 go run . build --arch=armhf
-go run . test --arch=armhf
+LD_LIBRARY_PATH=/usr/arm-linux-gnueabihf/lib go run . test --arch=armhf
 ```
 
 There is an archive file in `opt/linux_armhf`.
@@ -60,12 +58,10 @@ At amd64 linux environment.
 
 ```sh
 sudo apt install qemu-user-static g++-aarch64-linux-gnu
-
-sudo ln -s /usr/aarch64-linux-gnu/lib/ /lib/aarch64-linux-gnu
-sudo ln -s /lib/aarch64-linux-gnu/ld-2.23.so /lib/ld-linux-aarch64.so.1
+sudo ln -s /usr/aarch64-linux-gnu/lib/ld-2.*.so /lib/ld-linux-aarch64.so.1
 
 go run . build --arch=arm64
-go run . test --arch=arm64
+LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib go run . test --arch=arm64
 ```
 
 There is an archive file in `opt/linux_arm64`.
