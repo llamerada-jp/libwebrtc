@@ -30,7 +30,7 @@ There is an archive file in `opt/linux_amd64`.
 At amd64 linux environment.
 
 ```sh
-sudo apt install qemu-usr-static g++-i686-linux-gnu
+sudo apt install qemu-user-static g++-i686-linux-gnu
 
 go run . build --arch=i386
 go run . test --arch=i386
@@ -43,7 +43,7 @@ There is an archive file in `opt/linux_i386`.
 At amd64 linux environment.
 
 ```sh
-sudo apt install qemu-usr-static g++-arm-linux-gnueabihf
+sudo apt install qemu-user-static g++-arm-linux-gnueabihf
 
 sudo ln -s /usr/arm-linux-gnueabihf/lib /lib/arm-linux-gnueabihf
 sudo ln -s /lib/arm-linux-gnueabihf/ld-2.*.so /lib/ld-linux-armhf.so.3
@@ -59,7 +59,7 @@ There is an archive file in `opt/linux_armhf`.
 At amd64 linux environment.
 
 ```sh
-sudo apt install qemu-usr-static g++-aarch64-linux-gnu
+sudo apt install qemu-user-static g++-aarch64-linux-gnu
 
 sudo ln -s /usr/aarch64-linux-gnu/lib/ /lib/aarch64-linux-gnu
 sudo ln -s /lib/aarch64-linux-gnu/ld-2.23.so /lib/ld-linux-aarch64.so.1

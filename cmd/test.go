@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/colonio/libwebrtc/pkg/test"
+	"github.com/llamerada-jp/libwebrtc/pkg/test"
 	"github.com/spf13/cobra"
 )
 
