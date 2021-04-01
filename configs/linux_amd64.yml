@@ -55,10 +55,12 @@ Headers:
 # add by myself
 - '.'
 - 'call'
+- 'common_video'
 - 'common_video/include'
 - 'common_video/generic_frame_descriptor'
 - 'logging/rtc_event_log'
 - 'logging/rtc_event_log/events'
+- 'modules/async_audio_processing'
 - 'modules/rtp_rtcp/source/rtcp_packet'
 - 'modules/video_coding'
 - 'modules/video_coding/codecs/interface'
