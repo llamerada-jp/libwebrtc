@@ -1,0 +1,5 @@
+TARGET_OS {{.TargetOS}}
+TARGET_ARCH {{.TargetArch}}
+CHROME_VERSION {{.ChromeVersion}}
+CHROME_COMMIT_ID {{.ChromeCommitID}}
+WEBRTC_COMMIT_ID {{.WebrtcCommitID}}
