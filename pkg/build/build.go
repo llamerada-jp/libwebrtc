@@ -2,6 +2,7 @@ package build
 
 import (
 	"bufio"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,13 +13,18 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"text/template"
 	"time"
 )
 
+//go:embed buildinfo.template
+var BuildInfoTemplate string
+
 const (
-	DepotToolsURL = "https://chromium.googlesource.com/chromium/tools/depot_tools.git"
-	ChromeInfoURL = "https://omahaproxy.appspot.com/all.json"
-	WebrtcInfoURL = "https://raw.githubusercontent.com/chromium/chromium/%s/DEPS"
+	DepotToolsURL     = "https://chromium.googlesource.com/chromium/tools/depot_tools.git"
+	ChromeInfoURL     = "https://omahaproxy.appspot.com/all.json"
+	WebrtcInfoURL     = "https://raw.githubusercontent.com/chromium/chromium/%s/DEPS"
+	BuildInfoFilename = "libwebrtc_buildinfo.txt"
 )
 
 type Config struct {
@@ -49,18 +55,18 @@ type build struct {
 	tmpDir  string
 	workDir string
 
-	targetOS string
+	TargetOS string
 	// configurations from command line
-	targetArch string
+	TargetArch string
 	isDebug    bool
 
 	// configurations read from file
 	config *Config
 
 	// chrome infomations
-	chromeVersion  string
-	chromeCommitID string
-	webrtcCommitID string
+	ChromeVersion  string
+	ChromeCommitID string
+	WebrtcCommitID string
 }
 
 func command(path, name string, args ...string) {
@@ -116,8 +122,8 @@ func unlink(path string) {
 func Execute(config *Config, targetOS, targetArch string, isDebug bool) error {
 	build := &build{
 		config:     config,
-		targetOS:   targetOS,
-		targetArch: targetArch,
+		TargetOS:   targetOS,
+		TargetArch: targetArch,
 		isDebug:    isDebug,
 	}
 
@@ -150,6 +156,9 @@ func Execute(config *Config, targetOS, targetArch string, isDebug bool) error {
 	if err := build.collectHeaders(); err != nil {
 		return err
 	}
+	if err := build.generateBuildInfo(); err != nil {
+		return err
+	}
 	if err := build.makeArchive(); err != nil {
 		return err
 	}
@@ -159,7 +168,7 @@ func Execute(config *Config, targetOS, targetArch string, isDebug bool) error {
 func (b *build) makeDirs() error {
 	pwd, _ := os.Getwd()
 	b.optDir = path.Join(pwd, "opt")
-	b.workDir = path.Join(b.optDir, fmt.Sprintf("%s_%s", b.targetOS, b.targetArch))
+	b.workDir = path.Join(b.optDir, fmt.Sprintf("%s_%s", b.TargetOS, b.TargetArch))
 	b.tmpDir = path.Join(b.workDir, "tmp")
 
 	unlink(path.Join(b.workDir, "include"))
@@ -216,8 +225,8 @@ func (b *build) getChromeInfo() error {
 		if info.Os == b.config.ChromeOsStr {
 			for _, v := range info.Versions {
 				if v.Channel == "stable" {
-					b.chromeCommitID = v.BranchCommit
-					b.chromeVersion = v.CurrentVersion
+					b.ChromeCommitID = v.BranchCommit
+					b.ChromeVersion = v.CurrentVersion
 					return nil
 				}
 			}
@@ -231,7 +240,7 @@ func (b *build) getWebrtcInfo() error {
 	httpClient := http.Client{
 		Timeout: 60 * time.Second,
 	}
-	res, err := httpClient.Get(fmt.Sprintf(WebrtcInfoURL, b.chromeCommitID))
+	res, err := httpClient.Get(fmt.Sprintf(WebrtcInfoURL, b.ChromeCommitID))
 	if err != nil {
 		return err
 	}
@@ -242,12 +251,12 @@ func (b *build) getWebrtcInfo() error {
 	for scanner.Scan() {
 		group := rep.FindStringSubmatch(scanner.Text())
 		if len(group) == 2 {
-			b.webrtcCommitID = group[1]
+			b.WebrtcCommitID = group[1]
 			return nil
 		}
 	}
 
-	return fmt.Errorf("the infomation of WebRTC was not found %v", b.chromeCommitID)
+	return fmt.Errorf("the infomation of WebRTC was not found %v", b.ChromeCommitID)
 }
 
 func (b *build) build() error {
@@ -261,8 +270,8 @@ func (b *build) build() error {
 	sd := path.Join(b.workDir, "src")
 	command(sd, "git", "fetch", "origin")
 	// command(sd, "git", "clean", "-df")
-	command(sd, "git", "checkout", b.webrtcCommitID)
-	if b.targetOS == "linux" {
+	command(sd, "git", "checkout", b.WebrtcCommitID)
+	if b.TargetOS == "linux" {
 		depOpts := b.config.BuildDepsOpts
 		depOpts = append(depOpts, "--no-prompt")
 		command(sd, "./build/install-build-deps.sh", depOpts...)
@@ -401,14 +410,33 @@ func (b *build) collectHeaders() error {
 	return nil
 }
 
-func (b *build) makeArchive() error {
-	if b.targetOS == "linux" {
-		fname := fmt.Sprintf("libwebrtc-%s-linux-%s.tar.gz", b.chromeVersion, b.targetArch)
-		command(b.workDir, "tar", "cvzf", fname, "include", "lib")
+func (b *build) generateBuildInfo() error {
+	tmpl, err := template.New("buildinfo").Parse(BuildInfoTemplate)
+	if err != nil {
+		return err
 	}
-	if b.targetOS == "macos" {
-		fname := fmt.Sprintf("libwebrtc-%s-macos-%s.zip", b.chromeVersion, b.targetArch)
-		command(b.workDir, "zip", "-r", fname, "include", "lib")
+	f, err := os.Create(path.Join(b.workDir, BuildInfoFilename))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	fw := bufio.NewWriter(f)
+	err = tmpl.Execute(fw, *b)
+	if err != nil {
+		return err
+	}
+	return fw.Flush()
+}
+
+func (b *build) makeArchive() error {
+	if b.TargetOS == "linux" {
+		fname := fmt.Sprintf("libwebrtc-%s-linux-%s.tar.gz", b.ChromeVersion, b.TargetArch)
+		command(b.workDir, "tar", "cvzf", fname, "include", "lib", BuildInfoFilename)
+	}
+	if b.TargetOS == "macos" {
+		fname := fmt.Sprintf("libwebrtc-%s-macos-%s.zip", b.ChromeVersion, b.TargetArch)
+		command(b.workDir, "zip", "-r", fname, "include", "lib", BuildInfoFilename)
 	}
 	return nil
 }
