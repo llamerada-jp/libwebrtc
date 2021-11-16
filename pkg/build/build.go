@@ -193,7 +193,7 @@ func (b *build) setupDepotTools() error {
 		command("opt", "git", "clone", DepotToolsURL)
 
 	} else {
-		command(depotToolsPath, "git", "checkout", "master")
+		command(depotToolsPath, "git", "checkout", "main")
 		command(depotToolsPath, "git", "pull")
 	}
 
