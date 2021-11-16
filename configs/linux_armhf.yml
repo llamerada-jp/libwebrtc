@@ -6,6 +6,7 @@ BuildDepsOpts:
 SysrootArch: arm
 GnOpts:
 - 'arm_float_abi="hard"'
+- 'enable_libaom=false'
 - 'libyuv_disable_jpeg=true'
 - 'rtc_build_opus=false'
 - 'rtc_enable_protobuf=false'
@@ -17,12 +18,14 @@ GnOpts:
 - 'rtc_include_opus=false'
 - 'rtc_include_pulse_audio=false'
 - 'rtc_use_dummy_audio_file_devices=true'
-- 'rtc_use_gtk=false'
 - 'rtc_use_x11=false'
 - 'target_cpu="arm"'
 - 'target_os="linux"'
+# avoid build error caused by using std::is_pod
+- 'treat_warnings_as_errors=false'
 - 'use_custom_libcxx=false'
 - 'use_libjpeg_turbo=false'
+- 'use_gtk=false'
 - 'use_rtti=true'
 - 'use_system_libjpeg=true'
 BuildTargets:
@@ -40,10 +43,8 @@ Headers:
 - 'modules/audio_coding/include'
 - 'modules/audio_device/include'
 - 'modules/audio_processing/include'
-# - 'modules/bitrate_controller/include'
 - 'modules/congestion_controller/include'
 - 'modules/include'
-- 'modules/remote_bitrate_estimator/include'
 - 'modules/rtp_rtcp/include'
 - 'modules/rtp_rtcp/source'
 - 'modules/utility/include'
@@ -52,21 +53,21 @@ Headers:
 - 'modules/video_coding/codecs/vp9/include'
 - 'modules/video_coding/include'
 - 'pc'
-# - 'rtc_base'
 - 'system_wrappers/include'
 # add by myself
-- '.'
 - 'call'
 - 'common_video'
 - 'common_video/include'
 - 'common_video/generic_frame_descriptor'
 - 'logging/rtc_event_log'
 - 'logging/rtc_event_log/events'
+- 'logging/rtc_event_log/encoder'
 - 'modules/async_audio_processing'
 - 'modules/rtp_rtcp/source/rtcp_packet'
 - 'modules/video_coding'
 - 'modules/video_coding/codecs/interface'
 - 'p2p/base'
+- 'video/config'
 HeadersWithSubdir:
 - 'api'
 # add by myself

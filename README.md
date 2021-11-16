@@ -19,6 +19,7 @@ This program automatically uses the latest stable version of WebRTC's source cod
 At amd64 linux environment.
 
 ```sh
+sudo dpkg --add-architecture i386
 go run . build
 go run . test
 ```

@@ -1,6 +1,7 @@
 
 #include <unistd.h>
 
+#include <cassert>
 #include <condition_variable>
 #include <iostream>
 #include <list>
@@ -57,7 +58,7 @@ class Connection {
   // the other party.
   // SDPの作成が成功したら、LocalDescriptionとして設定し、相手に渡す文字列として表示する。
   void on_success_csd(webrtc::SessionDescriptionInterface *desc) {
-    peer_connection->SetLocalDescription(ssdo, desc);
+    peer_connection->SetLocalDescription(ssdo.get(), desc);
 
     std::string sdp;
     desc->ToString(&sdp);
@@ -98,9 +99,9 @@ class Connection {
     };
 
     void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override {
+      assert(!parent.data_channel);
       std::cout << parent.name << ":" << std::this_thread::get_id() << ":"
-                << "PeerConnectionObserver::DataChannel(" << data_channel << ", " << parent.data_channel.get() << ")"
-                << std::endl;
+                << "PeerConnectionObserver::DataChannel(" << data_channel->id() << ")" << std::endl;
       // The request recipient gets a DataChannel instance in the onDataChannel event.
       // リクエスト受信側は、onDataChannelイベントでDataChannelインスタンスをもらう。
       parent.data_channel = data_channel;
@@ -167,7 +168,7 @@ class Connection {
     CSDO(Connection &parent) : parent(parent) {
     }
 
-    void OnSuccess(webrtc::SessionDescriptionInterface *desc) override {
+    void OnSuccess(webrtc::SessionDescriptionInterface* desc) override {
       std::cout << parent.name << ":" << std::this_thread::get_id() << ":"
                 << "CreateSessionDescriptionObserver::OnSuccess" << std::endl;
       parent.on_success_csd(desc);
@@ -283,42 +284,52 @@ class Wrapper {
     std::cout << name << ":" << std::this_thread::get_id() << ":"
               << "create_offer_sdp" << std::endl;
 
-    connection.peer_connection =
-        peer_connection_factory->CreatePeerConnection(configuration, nullptr, nullptr, &connection.pco);
-
-    webrtc::DataChannelInit config;
-
-    // Configuring DataChannel.
-    // DataChannelの設定。
-    connection.data_channel = connection.peer_connection->CreateDataChannel("data_channel", &config);
-    connection.data_channel->RegisterObserver(&connection.dco);
-
-    if (connection.peer_connection.get() == nullptr) {
+    webrtc::PeerConnectionDependencies pc_dependencies(&connection.pco);
+    auto error_or_peer_connection=
+        peer_connection_factory->CreatePeerConnectionOrError(configuration, std::move(pc_dependencies));
+    if (error_or_peer_connection.ok()) {
+      connection.peer_connection = std::move(error_or_peer_connection.value());
+    } else {
       peer_connection_factory = nullptr;
       std::cout << name << ":" << std::this_thread::get_id() << ":"
-                << "Error on CreatePeerConnection." << std::endl;
+                << "Error on CreatePeerConnectionOrError." << std::endl;
       exit(EXIT_FAILURE);
     }
-    connection.peer_connection->CreateOffer(connection.csdo, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+
+    webrtc::DataChannelInit config;
+    // DataChannelの設定。
+    auto error_or_data_channel = connection.peer_connection->CreateDataChannelOrError("data_channel", &config);
+    if (error_or_data_channel.ok()) {
+      connection.data_channel = std::move(error_or_data_channel.value());
+    } else {
+      std::cout << name << ":" << std::this_thread::get_id() << ":"
+                << "Error on CreateDataChannelOrError." << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    connection.data_channel->RegisterObserver(&connection.dco);
+    connection.peer_connection->CreateOffer(connection.csdo.get(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
   }
 
   void create_answer_sdp(const std::string &parameter) {
     std::cout << name << ":" << std::this_thread::get_id() << ":"
               << "create_answer_sdp" << std::endl;
 
-    connection.peer_connection =
-        peer_connection_factory->CreatePeerConnection(configuration, nullptr, nullptr, &connection.pco);
-
-    if (connection.peer_connection.get() == nullptr) {
+    webrtc::PeerConnectionDependencies pc_dependencies(&connection.pco);
+    auto error_or_peer_connection = peer_connection_factory->CreatePeerConnectionOrError(configuration, std::move(pc_dependencies));
+    if (error_or_peer_connection.ok()) {
+      connection.peer_connection = std::move(error_or_peer_connection.value());
+    } else {
       peer_connection_factory = nullptr;
       std::cout << name << ":" << std::this_thread::get_id() << ":"
-                << "Error on CreatePeerConnection." << std::endl;
+                << "Error on CreatePeerConnectionOrError." << std::endl;
       exit(EXIT_FAILURE);
     }
+
     webrtc::SdpParseError error;
-    webrtc::SessionDescriptionInterface *session_description(
-        webrtc::CreateSessionDescription("offer", parameter, &error));
-    if (session_description == nullptr) {
+    std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
+        webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, parameter, &error);
+    if (!session_description) {
       std::cout << name << ":" << std::this_thread::get_id() << ":"
                 << "Error on CreateSessionDescription." << std::endl
                 << error.line << std::endl
@@ -329,8 +340,8 @@ class Wrapper {
                 << "Offer SDP:end" << std::endl;
       exit(EXIT_FAILURE);
     }
-    connection.peer_connection->SetRemoteDescription(connection.ssdo, session_description);
-    connection.peer_connection->CreateAnswer(connection.csdo, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    connection.peer_connection->SetRemoteDescription(connection.ssdo.get(), session_description.release());
+    connection.peer_connection->CreateAnswer(connection.csdo.get(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
   }
 
   void push_reply_sdp(const std::string &parameter) {
@@ -338,9 +349,9 @@ class Wrapper {
               << "push_reply_sdp" << std::endl;
 
     webrtc::SdpParseError error;
-    webrtc::SessionDescriptionInterface *session_description(
-        webrtc::CreateSessionDescription("answer", parameter, &error));
-    if (session_description == nullptr) {
+    std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
+        webrtc::CreateSessionDescription(webrtc::SdpType::kAnswer, parameter, &error);
+    if (!session_description) {
       std::cout << name << ":" << std::this_thread::get_id() << ":"
                 << "Error on CreateSessionDescription." << std::endl
                 << error.line << std::endl
@@ -351,7 +362,7 @@ class Wrapper {
                 << "Answer SDP:end" << std::endl;
       exit(EXIT_FAILURE);
     }
-    connection.peer_connection->SetRemoteDescription(connection.ssdo, session_description);
+    connection.peer_connection->SetRemoteDescription(connection.ssdo.get(), session_description.release());
   }
 
   void push_ice(const Ice &ice_it) {
