@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -41,7 +41,7 @@ type Config struct {
 }
 
 type chromeInfo struct {
-	Os       string `json:os`
+	Os       string `json:"os"`
 	Versions []struct {
 		BranchCommit   string `json:"branch_commit"`
 		Channel        string `json:"channel"`
@@ -81,8 +81,7 @@ func command(path, name string, args ...string) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		fmt.Errorf("Run", err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
@@ -99,22 +98,19 @@ func commandStdin(path, input, name string, args ...string) {
 	cmd.Stderr = os.Stderr
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		fmt.Fprint(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 	io.WriteString(stdin, input)
 	stdin.Close()
 	if err := cmd.Run(); err != nil {
-		fmt.Fprint(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
 func unlink(path string) {
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		if err := os.RemoveAll(path); err != nil {
-			fmt.Fprint(os.Stderr, err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 	}
 }
@@ -215,7 +211,7 @@ func (b *build) getChromeInfo() error {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("http status code was not ok", ChromeInfoURL, res.Status)
+		return fmt.Errorf("http status code was not ok (%s) %s", res.Status, ChromeInfoURL)
 	}
 	var chromeInfos []chromeInfo
 	if err := json.NewDecoder(res.Body).Decode(&chromeInfos); err != nil {
@@ -272,9 +268,10 @@ func (b *build) build() error {
 	// command(sd, "git", "clean", "-df")
 	command(sd, "git", "checkout", b.WebrtcCommitID)
 	if b.TargetOS == "linux" {
-		depOpts := b.config.BuildDepsOpts
+		depOpts := []string{"./build/install-build-deps.sh"}
+		depOpts = append(depOpts, b.config.BuildDepsOpts...)
 		depOpts = append(depOpts, "--no-prompt")
-		command(sd, "./build/install-build-deps.sh", depOpts...)
+		command(sd, "sudo", depOpts...)
 		if b.config.SysrootArch != nil {
 			command(sd, "./build/linux/sysroot_scripts/install-sysroot.py", "--arch="+*b.config.SysrootArch)
 		}
@@ -391,7 +388,7 @@ func (b *build) collectHeaders() error {
 		if err := os.MkdirAll(dst, os.ModePerm); err != nil {
 			return err
 		}
-		files, err := ioutil.ReadDir(src)
+		files, err := os.ReadDir(src)
 		if err != nil {
 			return err
 		}
@@ -411,7 +408,7 @@ func (b *build) collectHeaders() error {
 }
 
 func (b *build) generateBuildInfo() error {
-	tmpl, err := template.New("buildinfo").Parse(BuildInfoTemplate)
+	temp, err := template.New("buildinfo").Parse(BuildInfoTemplate)
 	if err != nil {
 		return err
 	}
@@ -422,7 +419,7 @@ func (b *build) generateBuildInfo() error {
 	defer f.Close()
 
 	fw := bufio.NewWriter(f)
-	err = tmpl.Execute(fw, *b)
+	err = temp.Execute(fw, *b)
 	if err != nil {
 		return err
 	}
@@ -431,8 +428,8 @@ func (b *build) generateBuildInfo() error {
 
 func (b *build) makeArchive() error {
 	if b.TargetOS == "linux" {
-		fname := fmt.Sprintf("libwebrtc-%s-linux-%s.tar.gz", b.ChromeVersion, b.TargetArch)
-		command(b.workDir, "tar", "cvzf", fname, "include", "lib", BuildInfoFilename)
+		filename := fmt.Sprintf("libwebrtc-%s-linux-%s.tar.gz", b.ChromeVersion, b.TargetArch)
+		command(b.workDir, "tar", "cvzf", filename, "include", "lib", BuildInfoFilename)
 	}
 	if b.TargetOS == "macos" {
 		fname := fmt.Sprintf("libwebrtc-%s-macos-%s.zip", b.ChromeVersion, b.TargetArch)
