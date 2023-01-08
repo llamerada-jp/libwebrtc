@@ -21,7 +21,7 @@ ifeq ($(ARCH),arm64)
 endif
 
 # build option
-CXX_FLAGS := $(CXX_FLAGS) -std=c++14 -fvisibility=hidden -fvisibility-inlines-hidden
+CXX_FLAGS := $(CXX_FLAGS) -std=c++17 -fvisibility=hidden -fvisibility-inlines-hidden
 
 # build option by OS
 ifeq ($(shell uname),Linux)

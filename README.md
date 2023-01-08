@@ -9,7 +9,7 @@ This program automatically uses the latest stable version of WebRTC's source cod
 
 ## Requirements
 
-- golang 1.16 or later
+- golang 1.19 or later
 - Other requirement environments are depend on [`Chromium project`](https://chromium.googlesource.com/chromium/src/+/master/docs/linux/build_instructions.md)
 
 ## How to use
@@ -19,6 +19,7 @@ This program automatically uses the latest stable version of WebRTC's source cod
 At amd64 linux environment.
 
 ```sh
+sudo dpkg --add-architecture i386
 go run . build
 go run . test
 ```
