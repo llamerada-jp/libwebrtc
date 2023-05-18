@@ -12,12 +12,12 @@
 
 // Define the macros to fit compile environment.
 // 環境に合わせてマクロを定義する。
-//#define WEBRTC_ANDROID 1
-//#define WEBRTC_IOS 1
-//#define WEBRTC_LINUX 1
-//#define WEBRTC_MAC 1
-//#define WEBRTC_POSIX 1
-//#define WEBRTC_WIN 1
+// #define WEBRTC_ANDROID 1
+// #define WEBRTC_IOS 1
+// #define WEBRTC_LINUX 1
+// #define WEBRTC_MAC 1
+// #define WEBRTC_POSIX 1
+// #define WEBRTC_WIN 1
 
 // Header files related with WebRTC.
 // WebRTC関連のヘッダ
@@ -168,7 +168,7 @@ class Connection {
     CSDO(Connection &parent) : parent(parent) {
     }
 
-    void OnSuccess(webrtc::SessionDescriptionInterface* desc) override {
+    void OnSuccess(webrtc::SessionDescriptionInterface *desc) override {
       std::cout << parent.name << ":" << std::this_thread::get_id() << ":"
                 << "CreateSessionDescriptionObserver::OnSuccess" << std::endl;
       parent.on_success_csd(desc);
@@ -285,7 +285,7 @@ class Wrapper {
               << "create_offer_sdp" << std::endl;
 
     webrtc::PeerConnectionDependencies pc_dependencies(&connection.pco);
-    auto error_or_peer_connection=
+    auto error_or_peer_connection =
         peer_connection_factory->CreatePeerConnectionOrError(configuration, std::move(pc_dependencies));
     if (error_or_peer_connection.ok()) {
       connection.peer_connection = std::move(error_or_peer_connection.value());
@@ -308,7 +308,8 @@ class Wrapper {
     }
 
     connection.data_channel->RegisterObserver(&connection.dco);
-    connection.peer_connection->CreateOffer(connection.csdo.get(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    connection.peer_connection->CreateOffer(
+        connection.csdo.get(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
   }
 
   void create_answer_sdp(const std::string &parameter) {
@@ -316,7 +317,8 @@ class Wrapper {
               << "create_answer_sdp" << std::endl;
 
     webrtc::PeerConnectionDependencies pc_dependencies(&connection.pco);
-    auto error_or_peer_connection = peer_connection_factory->CreatePeerConnectionOrError(configuration, std::move(pc_dependencies));
+    auto error_or_peer_connection =
+        peer_connection_factory->CreatePeerConnectionOrError(configuration, std::move(pc_dependencies));
     if (error_or_peer_connection.ok()) {
       connection.peer_connection = std::move(error_or_peer_connection.value());
     } else {
@@ -341,7 +343,8 @@ class Wrapper {
       exit(EXIT_FAILURE);
     }
     connection.peer_connection->SetRemoteDescription(connection.ssdo.get(), session_description.release());
-    connection.peer_connection->CreateAnswer(connection.csdo.get(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    connection.peer_connection->CreateAnswer(
+        connection.csdo.get(), webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
   }
 
   void push_reply_sdp(const std::string &parameter) {
@@ -370,8 +373,8 @@ class Wrapper {
               << "push_ice" << std::endl;
 
     webrtc::SdpParseError err_sdp;
-    webrtc::IceCandidateInterface *ice =
-        CreateIceCandidate(ice_it.sdp_mid, ice_it.sdp_mline_index, ice_it.candidate, &err_sdp);
+    std::unique_ptr<webrtc::IceCandidateInterface> ice(
+        CreateIceCandidate(ice_it.sdp_mid, ice_it.sdp_mline_index, ice_it.candidate, &err_sdp));
     if (!err_sdp.line.empty() && !err_sdp.description.empty()) {
       std::cout << name << ":" << std::this_thread::get_id() << ":"
                 << "Error on CreateIceCandidate" << std::endl
@@ -379,7 +382,7 @@ class Wrapper {
                 << err_sdp.description << std::endl;
       exit(EXIT_FAILURE);
     }
-    connection.peer_connection->AddIceCandidate(ice);
+    connection.peer_connection->AddIceCandidate(ice.get());
   }
 
   void send(const std::string &parameter) {
