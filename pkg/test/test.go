@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -10,11 +11,11 @@ import (
 func make(target string, args ...string) {
 	pwd, _ := os.Getwd()
 	testDir := path.Join(pwd, "test")
-	fmt.Printf("\x1b[36m%s\x1b[0m$ make -C %s", pwd, testDir)
+	cmdStr := fmt.Sprintf("\x1b[36m%s\x1b[0m$ make -C %s", pwd, testDir)
 	for _, v := range args {
-		fmt.Print(" ", v)
+		cmdStr = cmdStr + fmt.Sprint(" ", v)
 	}
-	fmt.Println()
+	log.Println(cmdStr)
 
 	tmpArgs := []string{
 		target,
@@ -29,7 +30,7 @@ func make(target string, args ...string) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		fmt.Errorf("Run", err)
+		log.Print(err)
 		os.Exit(1)
 	}
 }
