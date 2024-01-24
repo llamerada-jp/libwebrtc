@@ -70,11 +70,11 @@ type build struct {
 }
 
 func command(path, name string, args ...string) {
-	fmt.Printf("\x1b[36m%s\x1b[0m$ %s", path, name)
+	cmdStr := fmt.Sprintf("\x1b[36m%s\x1b[0m$ %s", path, name)
 	for _, v := range args {
-		fmt.Print(" ", v)
+		cmdStr = cmdStr + fmt.Sprint(" ", v)
 	}
-	fmt.Println()
+	log.Println(cmdStr)
 
 	cmd := exec.Command(name, args...)
 	cmd.Dir = path
@@ -86,11 +86,11 @@ func command(path, name string, args ...string) {
 }
 
 func commandStdin(path, input, name string, args ...string) {
-	fmt.Printf("\x1b[36m%s\x1b[0m$ %s", path, name)
+	cmdStr := fmt.Sprintf("\x1b[36m%s\x1b[0m$ %s", path, name)
 	for _, v := range args {
-		fmt.Print(" ", v)
+		cmdStr = cmdStr + fmt.Sprint(" ", v)
 	}
-	fmt.Println()
+	log.Println(cmdStr)
 
 	cmd := exec.Command(name, args...)
 	cmd.Dir = path
