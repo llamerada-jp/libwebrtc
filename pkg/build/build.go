@@ -22,7 +22,7 @@ var BuildInfoTemplate string
 
 const (
 	DepotToolsURL     = "https://chromium.googlesource.com/chromium/tools/depot_tools.git"
-	ChromeInfoURL     = "https://omahaproxy.appspot.com/all.json"
+	ChromeInfoURL     = "https://chromiumdash.appspot.com/fetch_milestones?only_branched=true"
 	WebrtcInfoURL     = "https://raw.githubusercontent.com/chromium/chromium/%s/DEPS"
 	BuildInfoFilename = "libwebrtc_buildinfo.txt"
 )
@@ -41,12 +41,11 @@ type Config struct {
 }
 
 type chromeInfo struct {
-	Os       string `json:"os"`
-	Versions []struct {
-		BranchCommit   string `json:"branch_commit"`
-		Channel        string `json:"channel"`
-		CurrentVersion string `json:"current_version"`
-	} `json:"versions"`
+	ChromiumBranch         string `json:"chromium_branch"`
+	ChromiumMainBranchHash string `json:"chromium_main_branch_hash"`
+	Milestone              int32  `json:"milestone"`
+	ScheduleActive         bool   `json:"schedule_active"`
+	SchedulePhase          string `json:"schedule_phase"`
 }
 
 type build struct {
@@ -217,16 +216,14 @@ func (b *build) getChromeInfo() error {
 	if err := json.NewDecoder(res.Body).Decode(&chromeInfos); err != nil {
 		return err
 	}
+
 	for _, info := range chromeInfos {
-		if info.Os == b.config.ChromeOsStr {
-			for _, v := range info.Versions {
-				if v.Channel == "stable" {
-					b.ChromeCommitID = v.BranchCommit
-					b.ChromeVersion = v.CurrentVersion
-					return nil
-				}
-			}
+		if !info.ScheduleActive && info.SchedulePhase != "stable" {
+			continue
 		}
+		b.ChromeCommitID = info.ChromiumMainBranchHash
+		b.ChromeVersion = fmt.Sprintf("%d", info.Milestone)
+		return nil
 	}
 
 	return fmt.Errorf("the infomation of chrome for specified platform was not found %v", b.config.ChromeOsStr)
