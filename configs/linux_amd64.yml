@@ -10,7 +10,6 @@ GnOpts:
 - 'rtc_enable_protobuf=false'
 - 'rtc_include_builtin_audio_codecs=false'
 - 'rtc_include_builtin_video_codecs=false'
-- 'rtc_include_builtin_video_codecs=false'
 - 'rtc_include_ilbc=false'
 - 'rtc_include_internal_audio_device=false'
 - 'rtc_include_opus=false'
